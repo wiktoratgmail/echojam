@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Sheets Data Tiles</title>
+  <style>
+    /* Dodaj stylizację dla kafli */
+    .tile {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px;
+      width: 200px;
+      height: 150px;
+    }
+  </style>
+</head>
+<body>
+  <div id="tiles-container"></div>
+
+  <script>
+    // Tutaj dodaj kod JavaScript do pobierania danych z Google Sheets i renderowania kafli
+    // Użyj Google Sheets API i odpowiednich żądań HTTP
+
+    // Przykładowy kod do renderowania kafli (załóżmy, że dane to tablica obiektów)
+    const data = [
+      { title: 'Rekord 1', description: 'Opis rekordu 1' },
+      { title: 'Rekord 2', description: 'Opis rekordu 2' },
+      // ... inne rekordy
+    ];
+
+    const tilesContainer = document.getElementById('tiles-container');
+
+    data.forEach(record => {
+      const tile = document.createElement('div');
+      tile.classList.add('tile');
+      tile.innerHTML = `<h3>${record.title}</h3><p>${record.description}</p>`;
+      tilesContainer.appendChild(tile);
+    });
+  </script>
+</body>
+</html>
