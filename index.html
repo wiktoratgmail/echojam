@@ -3,40 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google Sheets Data Tiles</title>
+  <title>Kafle z Arkusza Google</title>
   <style>
-    /* Dodaj stylizację dla kafli */
+    /* Dodaj stylizację kafli */
     .tile {
       border: 1px solid #ddd;
       padding: 10px;
       margin: 10px;
-      width: 200px;
-      height: 150px;
+      width: 300px;
+    }
+
+    .tile img {
+      max-width: 100%;
+      height: auto;
     }
   </style>
 </head>
 <body>
-  <div id="tiles-container"></div>
 
-  <script>
-    // Tutaj dodaj kod JavaScript do pobierania danych z Google Sheets i renderowania kafli
-    // Użyj Google Sheets API i odpowiednich żądań HTTP
+<div id="tiles-container"></div>
 
-    // Przykładowy kod do renderowania kafli (załóżmy, że dane to tablica obiektów)
-    const data = [
-      { title: 'Rekord 1', description: 'Opis rekordu 1' },
-      { title: 'Rekord 2', description: 'Opis rekordu 2' },
-      // ... inne rekordy
-    ];
+<script>
+// Adres URL publicznego arkusza
+const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgG63Mx0u0j7O-ZU_2TVvKchLT9vfdn9Iw3d8WjbC6-VN4mbaYkRZ9i0vMkYiF6WhdkxFDEqkMbHWw/pubhtml';
 
+// Funkcja do pobierania danych z arkusza
+async function fetchData() {
+  try {
+    const response = await fetch(sheetUrl);
+    const data = await response.text();
+
+    // Parsuj dane HTML do struktury DOM
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(data, 'text/html');
+
+    // Znajdź tabelę danych w arkuszu
+    const table = doc.querySelector('table');
+
+    // Pobierz wszystkie wiersze z tabeli
+    const rows = table.querySelectorAll('tbody tr');
+
+    // Tworzenie kafli dla każdego wiersza
     const tilesContainer = document.getElementById('tiles-container');
-
-    data.forEach(record => {
-      const tile = document.createElement('div');
-      tile.classList.add('tile');
-      tile.innerHTML = `<h3>${record.title}</h3><p>${record.description}</p>`;
+    rows.forEach(row => {
+      const columns = row.querySelectorAll('td');
+      const tile = createTile(columns);
       tilesContainer.appendChild(tile);
     });
-  </script>
+
+  } catch (error) {
+    console.error('Błąd pobierania danych:', error);
+  }
+}
+
+// Funkcja do tworzenia kafli na podstawie danych z wiersza
+function createTile(columns) {
+  const wytwornia = columns[0].textContent.trim();
+  const kolor = columns[1].textContent.trim();
+  const nr = columns[2].textContent.trim();
+  const artystaZespol = columns[3].textContent.trim() + ' - ' + columns[4].textContent.trim();
+  const discogsLink = columns[5].textContent.trim();
+  const ilosc = parseInt(columns[6].textContent.trim());
+  const uwagi = columns[7].textContent.trim();
+  const dataNabycia = columns[8].textContent.trim();
+
+  // Utwórz element kafla
+  const tile = document.createElement('div');
+  tile.classList.add('tile');
+  tile.style.backgroundColor = kolor;
+
+  // Dodaj zawartość do kafla
+  tile.innerHTML = `
+    <h3>${wytwornia}</h3>
+    <p><strong>${artystaZespol}</strong></p>
+    <p>Nr: ${nr}</p>
+    <p><a href="${discogsLink}" target="_blank">Link do Discogs</a></p>
+    <p>Ilość: <strong>${ilosc}</strong></p>
+    <p>${uwagi}</p>
+    <p>Data nabycia: ${ilosc !== 0 ? dataNabycia : 'Brak'}</p>
+  `;
+
+  return tile;
+}
+
+// Pobierz dane po załadowaniu strony
+window.onload = fetchData;
+</script>
+
 </body>
 </html>
