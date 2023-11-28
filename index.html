@@ -120,7 +120,7 @@ function createTile(item) {
     const ilosc = parseInt(item.ilosc);
     const kolor = item.kolor;
 
-    const kafelColor = kolor.toLowerCase();
+    const kafelColor = kolor ? kolor.toLowerCase() : ''; // Sprawdź, czy kolor nie jest undefined/null
 
     const tile = document.createElement('div');
     tile.classList.add('tile');
@@ -153,6 +153,7 @@ function createTile(item) {
 
     return tile;
 }
+
 
         // Funkcja do zastosowania filtru
         function applyFilter() {
