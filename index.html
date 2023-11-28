@@ -68,7 +68,16 @@ async function fetchData() {
 
 // Funkcja do tworzenia kafli na podstawie danych z wiersza
 async function createTile(columns) {
-  // ... (bez zmian)
+  const wytwornia = columns[0].textContent.trim();
+  const nr = columns[2].textContent.trim();
+  const artystaZespol = columns[3].textContent.trim() + ' - ' + columns[4].textContent.trim();
+  const discogsLink = columns[5].textContent.trim();
+  const ilosc = parseInt(columns[6].textContent.trim());
+  const uwagi = columns[7].textContent.trim();
+  const dataNabycia = columns[8].textContent.trim();
+
+  // Pobierz kolor tła komórki KOLOR z arkusza Google Sheets
+  const kolor = await fetchBackgroundColor(2, columns[1].textContent.trim());
 
   return new Promise((resolve) => {
     // Utwórz element kafla
