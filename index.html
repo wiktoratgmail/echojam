@@ -135,8 +135,15 @@
 
             tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
 
+ 
+
             tile.style.width = '300px';
             tile.style.height = '450px';
+
+             // Dodaj warunek na ilość
+                if (ilosc === 0) {
+                    tile.style.border = '2px solid red';
+                }
 
             tile.style.fontFamily = 'sans-serif';
 
@@ -151,7 +158,7 @@
             // Utwórz element obrazu
             const imageElement = document.createElement('img');
             imageElement.src = miniatura;
-            imageElement.alt = 'Miniatura'; // Dodaj tekst alternatywny dla obrazu (opcjonalne)
+           // imageElement.alt = 'Miniatura'; // Dodaj tekst alternatywny dla obrazu (opcjonalne)
             
             // Dodaj obraz miniatury do elementu miniatury
             thumbnailImage.appendChild(imageElement);
