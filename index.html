@@ -20,6 +20,9 @@
             max-width: 100%;
             height: auto;
         }
+        .tile {
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -70,7 +73,7 @@
                         wytwornia: columns[0].textContent.trim(),
                         nr,
                         artysta: columns[3].textContent.trim(),
-                        zespol: columns[4].textContent.trim(),
+                        album: columns[4].textContent.trim(),
                         ilosc: parseInt(columns[6].textContent.trim()),
                         kolor: columns[9].textContent.trim(),
                         miniatura: columns[10].textContent.trim(),
@@ -122,7 +125,8 @@
         function createTile(item) {
             const wytwornia = item.wytwornia;
             const nr = item.nr;
-            const artystaZespol = item.artysta + ' - ' + item.zespol;
+            const artysta = item.artysta;
+            const album = item.album;
             const ilosc = parseInt(item.ilosc);
             const kolor = item.kolor;
             const miniatura = item.miniatura;
@@ -168,9 +172,11 @@
 
             tile.appendChild(thumbnailContainer);
             tile.innerHTML += `
-                <h3>${wytwornia} ${nr}</h3>
-                <p><strong>${artystaZespol}</strong></p>
+               
+                <p><strong>${artysta}</strong></p>
+                <p>${album}</p>
                 <p>Ilość: <strong>${ilosc}</strong></p>
+                 <p>${wytwornia} - ${nr}</p>
             `;
 
             return tile;
