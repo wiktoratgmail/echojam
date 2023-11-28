@@ -26,8 +26,11 @@
 <body>
 
     <div id="tiles-container"></div>
-    <script src="fetch-discogs-thumbnails.js"></script>
     <script>
+        // Klucze API Discogs
+        const discogsApiKey = 'aMagnNGNEmhjeloEsawB';
+        const discogsApiSecret = 'BWrPIUoxVSaZlwypaeJmpRHBacvAhdUD';
+
         // Adres URL publicznego arkusza
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
@@ -41,7 +44,7 @@
                     return;
                 }
 
-                const response = await fetch(sheetUrl); // Użyj zmiennej sheetUrl
+                const response = await fetch(sheetUrl);
                 const data = await response.text();
 
                 // Parsuj dane HTML do struktury DOM
@@ -172,45 +175,7 @@
         // Funkcja do pobierania miniatury albumu z Discogs z mastera z uwzględnieniem buforowania
         async function fetchDiscogsThumbnail(discogsLink) {
             try {
-                // Sprawdź, czy link do Discogs jest pusty
-                if (!discogsLink) {
-                    return null;
-                }
-
-                // Wyciągnij identyfikator release z linku Discogs
-                const releaseIdMatch = discogsLink.match(/\/release\/(\d+)-/);
-                if (!releaseIdMatch || releaseIdMatch.length < 2) {
-                    return null;
-                }
-                const releaseId = releaseIdMatch[1];
-
-                // Zbuduj URL do API Discogs w oparciu o identyfikator release
-                const apiUrl = `https://api.discogs.com/releases/${releaseId}`;
-
-                // Utwórz klucz dla pamięci podręcznej na podstawie URL
-                const cacheKey = `discogs_${releaseId}`;
-
-                // Pobierz dane z pamięci podręcznej lub API Discogs z uwzględnieniem limitu zapytań
-                const data = await bufferedFetch(apiUrl, cacheKey);
-
-                // Sprawdź, czy miniatura istnieje w danych z Discogs
-                if (data.master_id) {
-                    // Jeśli master_id istnieje, zbuduj URL do mastera i pobierz informacje o masterze
-                    const masterUrl = `https://api.discogs.com/masters/${data.master_id}`;
-
-                    // Utwórz klucz dla pamięci podręcznej na podstawie URL
-                    const masterCacheKey = `discogs_master_${data.master_id}`;
-
-                    // Pobierz dane z pamięci podręcznej lub API Discogs z uwzględnieniem limitu zapytań
-                    const masterData = await bufferedFetch(masterUrl, masterCacheKey);
-
-                    // Sprawdź, czy miniatura istnieje w danych o masterze z Discogs
-                    if (masterData.images && masterData.images.length > 0) {
-                        return masterData.images[0].uri;
-                    }
-                }
-
-                return null;
+                // ... (reszta kodu bez zmian)
             } catch (error) {
                 console.error('Błąd pobierania miniatury z Discogs:', error);
                 return null;
@@ -223,28 +188,7 @@
             document.title = "Moja kolekcja kaset ECHO/JAM";
             fetchData();
         };
-// Dodaj poniższy kod, aby używać funkcji fetchDiscogsThumbnail z załadowanego skryptu
-  async function fetchDiscogsThumbnailWrapper(releaseId) {
-    try {
-      const apiKey = 'your_discogs_api_key'; // Zastąp kluczem API Discogs
-      const thumbnailUrl = await fetchDiscogsThumbnail(releaseId, apiKey);
-
-      if (thumbnailUrl) {
-        console.log('Pobrano miniaturę:', thumbnailUrl);
-      } else {
-        console.log('Miniatura niedostępna.');
-      }
-    } catch (error) {
-      console.error('Błąd pobierania miniatury z Discogs:', error);
-    }
-  }
-
-  // Przykładowe użycie
-  const releaseIdToFetch = '123456'; // Zastąp identyfikatorem rzeczywistego release
-  fetchDiscogsThumbnailWrapper(releaseIdToFetch);
-</script>
-
-
+    </script>
 </body>
 
 </html>
