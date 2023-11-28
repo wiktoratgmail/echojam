@@ -1,9 +1,7 @@
 name: Fetch Discogs thumbnails
 
 on:
-  push:
-    branches:
-      - main
+  deployment
 
 jobs:
   fetch-thumbnails:
