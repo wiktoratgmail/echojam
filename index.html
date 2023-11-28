@@ -26,6 +26,7 @@
 
 <script>
 // Adres URL publicznego arkusza
+// Adres URL publicznego arkusza
 const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
 // Funkcja do pobierania danych z arkusza
@@ -46,9 +47,17 @@ async function fetchData() {
 
     // Tworzenie kafli dla każdego wiersza
     const tilesContainer = document.getElementById('tiles-container');
-    rows.forEach(row => {
+
+    // Mapowanie obietnic do stworzenia kafli
+    const tilePromises = Array.from(rows).map(async (row) => {
       const columns = row.querySelectorAll('td');
-      const tile = createTile(columns);
+      const tile = await createTile(columns);
+      return tile;
+    });
+
+    // Oczekiwanie na zakończenie wszystkich obietnic i dodanie kafli do kontenera
+    const tiles = await Promise.all(tilePromises);
+    tiles.forEach(tile => {
       tilesContainer.appendChild(tile);
     });
 
@@ -59,35 +68,31 @@ async function fetchData() {
 
 // Funkcja do tworzenia kafli na podstawie danych z wiersza
 async function createTile(columns) {
-  const wytwornia = columns[0].textContent.trim();
-  const nr = columns[2].textContent.trim();
-  const artystaZespol = columns[3].textContent.trim() + ' - ' + columns[4].textContent.trim();
-  const discogsLink = columns[5].textContent.trim();
-  const ilosc = parseInt(columns[6].textContent.trim());
-  const uwagi = columns[7].textContent.trim();
-  const dataNabycia = columns[8].textContent.trim();
+  // ... (bez zmian)
 
-  // Pobierz kolor tła komórki KOLOR z arkusza Google Sheets
-  const kolor = await fetchBackgroundColor(2, columns[1].textContent.trim());
+  return new Promise((resolve) => {
+    // Utwórz element kafla
+    const tile = document.createElement('div');
+    tile.classList.add('tile');
+    tile.style.backgroundColor = kolor;
 
-  // Utwórz element kafla
-  const tile = document.createElement('div');
-  tile.classList.add('tile');
-  tile.style.backgroundColor = kolor;
+    // Dodaj zawartość do kafla
+    tile.innerHTML = `
+      <h3>${wytwornia}</h3>
+      <p><strong>${artystaZespol}</strong></p>
+      <p>Nr: ${nr}</p>
+      <p><a href="${discogsLink}" target="_blank">Link do Discogs</a></p>
+      <p>Ilość: <strong>${ilosc}</strong></p>
+      <p>${uwagi}</p>
+      <p>Data nabycia: ${ilosc !== 0 ? dataNabycia : 'Brak'}</p>
+    `;
 
-  // Dodaj zawartość do kafla
-  tile.innerHTML = `
-    <h3>${wytwornia}</h3>
-    <p><strong>${artystaZespol}</strong></p>
-    <p>Nr: ${nr}</p>
-    <p><a href="${discogsLink}" target="_blank">Link do Discogs</a></p>
-    <p>Ilość: <strong>${ilosc}</strong></p>
-    <p>${uwagi}</p>
-    <p>Data nabycia: ${ilosc !== 0 ? dataNabycia : 'Brak'}</p>
-  `;
-
-  return tile;
+    resolve(tile);
+  });
 }
+
+// ... (reszta kodu bez zmian)
+
 
 // Funkcja do pobierania koloru tła komórki z arkusza Google Sheets
 async function fetchBackgroundColor(column, value) {
