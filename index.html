@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kafle z Arkusza Google</title>
+  <title>Moja kolekcja kaset ECHO/JAM</title>
   <style>
     /* Dodaj stylizację kafli */
     .tile {
@@ -89,7 +89,7 @@ async function createTile(columns, row) {
   }
 
   // Pobierz wartość koloru bezpośrednio z arkusza Google Sheets (kolumna 10)
-  const kafelColor = kolor ? kolor : 'black'; // Domyślnie czarny, jeśli kolor nie jest określony
+  const kafelColor = kolor.toLowerCase(); // Zamień kolor na małe litery i sprawdź, czy jest czarny
 
   // Utwórz element kafla
   const tile = document.createElement('div');
@@ -97,7 +97,7 @@ async function createTile(columns, row) {
   tile.style.backgroundColor = kafelColor;
 
   // Ustaw kolor tekstu
-  tile.style.color = kafelColor === 'black' ? 'gold' : 'white';
+  tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
 
   // Zaktualizowane proporcje dla kafli
   tile.style.width = '300px'; // Dostosuj szerokość według potrzeb
@@ -109,13 +109,20 @@ async function createTile(columns, row) {
   // Dodaj pole dla miniatury albumu z Discogs
   const thumbnailContainer = document.createElement('div');
   thumbnailContainer.classList.add('thumbnail-container');
+  thumbnailContainer.style.width = '300px'; // Dostosuj szerokość pola dla miniatury
+  thumbnailContainer.style.height = '300px'; // Dostosuj wysokość pola dla miniatury
+
+  // Dodaj pole dla miniatury albumu (z discogsLink) wewnątrz thumbnailContainer
+  const thumbnailImage = document.createElement('div');
+  thumbnailImage.classList.add('thumbnail-image');
   const thumbnailUrl = await fetchDiscogsThumbnail(discogsLink);
   if (thumbnailUrl) {
-    thumbnailContainer.style.backgroundImage = `url(${thumbnailUrl})`;
+    thumbnailImage.style.backgroundImage = `url(${thumbnailUrl})`;
   }
-  tile.appendChild(thumbnailContainer);
+  thumbnailContainer.appendChild(thumbnailImage);
 
   // Dodaj zawartość do kafla
+  tile.appendChild(thumbnailContainer);
   tile.innerHTML += `
     <h3>${wytwornia}</h3>
     <p><strong>${artystaZespol}</strong></p>
@@ -152,6 +159,9 @@ window.onload = function () {
   document.title = "Moja kolekcja kaset ECHO/JAM";
   fetchData();
 };
+
+
+ 
 </script>
 
 </body>
