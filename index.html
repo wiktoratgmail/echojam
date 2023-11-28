@@ -72,6 +72,7 @@ async function fetchData() {
   }
 }
 
+ 
 // Funkcja do tworzenia kafli na podstawie danych z wiersza
 async function createTile(columns, row) {
   const wytwornia = columns[0].textContent.trim();
@@ -101,7 +102,7 @@ async function createTile(columns, row) {
 
   // Zaktualizowane proporcje dla kafli
   tile.style.width = '300px'; // Dostosuj szerokość według potrzeb
-  tile.style.height = '400px'; // Dostosuj wysokość według potrzeb
+  tile.style.height = '450px'; // Zwiększ wysokość dla miniatury
 
   // Zaktualizuj czcionkę
   tile.style.fontFamily = 'sans-serif';
@@ -109,8 +110,8 @@ async function createTile(columns, row) {
   // Dodaj pole dla miniatury albumu z Discogs
   const thumbnailContainer = document.createElement('div');
   thumbnailContainer.classList.add('thumbnail-container');
-  thumbnailContainer.style.width = '300px'; // Dostosuj szerokość pola dla miniatury
-  thumbnailContainer.style.height = '300px'; // Dostosuj wysokość pola dla miniatury
+  thumbnailContainer.style.width = '100%'; // Rozszerz szerokość pola dla miniatury
+  thumbnailContainer.style.height = '300px'; // Zostaw stałą wysokość pola dla miniatury
 
   // Dodaj pole dla miniatury albumu (z discogsLink) wewnątrz thumbnailContainer
   const thumbnailImage = document.createElement('div');
@@ -131,6 +132,8 @@ async function createTile(columns, row) {
 
   return tile;
 }
+
+ 
 
 // Funkcja buforująca do przechowywania danych w pamięci podręcznej
 const cache = new Map();
