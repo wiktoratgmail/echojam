@@ -35,19 +35,15 @@
 
     <div id="tiles-container"></div>
     <script>
-        // Klucze API Discogs
-        const discogsApiKey = 'your_discogs_api_key';
-        const discogsApiSecret = 'your_discogs_api_secret';
-
         // Adres URL publicznego arkusza
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
         // Funkcja do pobierania danych z arkusza
-        async function fetchData(filter) {
+        async function fetchData() {
             try {
                 const cachedData = cache.get('sheetData');
                 if (cachedData) {
-                    processSheetData(cachedData, filter);
+                    processSheetData(cachedData);
                     return;
                 }
 
@@ -70,7 +66,7 @@
                         return null;
                     }
 
-                    const tile = await createTile(columns, index + 2);
+                    const tile = createTile(columns, index + 2);
                     return tile;
                 });
 
@@ -87,19 +83,12 @@
         }
 
         // Funkcja do tworzenia kafli na podstawie danych z wiersza
-        async function createTile(columns, row) {
+        function createTile(columns, row) {
             const wytwornia = columns[0].textContent.trim();
             const nr = columns[2].textContent.trim();
             const artystaZespol = columns[3].textContent.trim() + ' - ' + columns[4].textContent.trim();
-            const discogsLink = columns[5].textContent.trim();
             const ilosc = parseInt(columns[6].textContent.trim());
-            const uwagi = columns[7].textContent.trim();
-            const dataNabycia = columns[8].textContent.trim();
             const kolor = columns[9].textContent.trim();
-
-            if (!discogsLink) {
-                return null;
-            }
 
             const kafelColor = kolor.toLowerCase();
 
@@ -121,10 +110,8 @@
 
             const thumbnailImage = document.createElement('div');
             thumbnailImage.classList.add('thumbnail-image');
-            const thumbnailUrl = await fetchDiscogsThumbnail(discogsLink);
-            if (thumbnailUrl) {
-                thumbnailImage.style.backgroundImage = `url(${thumbnailUrl})`;
-            }
+            // Możesz dodać tutaj dowolny obraz miniatury, jeśli masz je dostępne lokalnie
+
             thumbnailContainer.appendChild(thumbnailImage);
 
             tile.appendChild(thumbnailContainer);
@@ -149,7 +136,6 @@
             fetchData(filter);
         }
 
- 
 
         // Funkcja buforująca do przechowywania danych w pamięci podręcznej
         const cache = new Map();
