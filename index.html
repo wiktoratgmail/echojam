@@ -25,6 +25,14 @@
 
 <body>
 
+    <!-- Dodaj filtr -->
+    <label for="filter">Filtr: </label>
+    <select id="filter" onchange="applyFilter()">
+        <option value="all">WSZYSTKO</option>
+        <option value="owned">MAM</option>
+        <option value="wanted">SZUKAM</option>
+    </select>
+
     <div id="tiles-container"></div>
     <script>
         // Klucze API Discogs
@@ -146,6 +154,20 @@
             `;
 
             return tile;
+        }
+
+         // Funkcja do zastosowania filtru
+        function applyFilter() {
+            const filter = document.getElementById('filter').value;
+            const tilesContainer = document.getElementById('tiles-container');
+
+            // Usuń istniejące kafle
+            while (tilesContainer.firstChild) {
+                tilesContainer.removeChild(tilesContainer.firstChild);
+            }
+
+            // Pobierz dane ponownie, uwzględniając filtr
+            fetchData(filter);
         }
 
         // Funkcja buforująca do przechowywania danych w pamięci podręcznej
