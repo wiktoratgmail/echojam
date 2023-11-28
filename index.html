@@ -82,47 +82,77 @@
             }
         }
 
-        // Funkcja do tworzenia kafli na podstawie danych z wiersza
-        function createTile(columns, row) {
-            const wytwornia = columns[0].textContent.trim();
-            const nr = columns[2].textContent.trim();
-            const artystaZespol = columns[3].textContent.trim() + ' - ' + columns[4].textContent.trim();
-            const ilosc = parseInt(columns[6].textContent.trim());
-            const kolor = columns[9].textContent.trim();
+       // Funkcja do renderowania kafli na podstawie danych z arkusza
+function renderTiles(data, filter) {
+    const tilesContainer = document.getElementById('tiles-container');
 
-            const kafelColor = kolor.toLowerCase();
+    // Czyść istniejące kafle przed renderowaniem nowych
+    while (tilesContainer.firstChild) {
+        tilesContainer.removeChild(tilesContainer.firstChild);
+    }
 
-            const tile = document.createElement('div');
-            tile.classList.add('tile');
-            tile.style.backgroundColor = kafelColor;
-
-            tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
-
-            tile.style.width = '300px';
-            tile.style.height = '450px';
-
-            tile.style.fontFamily = 'sans-serif';
-
-            const thumbnailContainer = document.createElement('div');
-            thumbnailContainer.classList.add('thumbnail-container');
-            thumbnailContainer.style.width = '100%';
-            thumbnailContainer.style.height = '300px';
-
-            const thumbnailImage = document.createElement('div');
-            thumbnailImage.classList.add('thumbnail-image');
-            // Możesz dodać tutaj dowolny obraz miniatury, jeśli masz je dostępne lokalnie
-
-            thumbnailContainer.appendChild(thumbnailImage);
-
-            tile.appendChild(thumbnailContainer);
-            tile.innerHTML += `
-                <h3>${wytwornia} ${nr}</h3>
-                <p><strong>${artystaZespol}</strong></p>
-                <p>Ilość: <strong>${ilosc}</strong></p>
-            `;
-
-            return tile;
+    // Filtruj dane na podstawie wybranego filtra
+    const filteredData = data.filter(item => {
+        const ilosc = parseInt(item.ilosc);
+        if (filter === 'all') {
+            return true; // Wyświetlaj wszystkie
+        } else if (filter === 'owned' && ilosc > 0) {
+            return true; // Wyświetlaj z ilością większą niż 0
+        } else if (filter === 'wanted' && ilosc < 1) {
+            return true; // Wyświetlaj z ilością mniejszą niż 1
+        } else {
+            return false; // Wyświetlaj tylko pozostałe przypadki
         }
+    });
+
+    // Renderuj kafle na podstawie przefiltrowanych danych
+    filteredData.forEach(item => {
+        const tile = createTile(item);
+        tilesContainer.appendChild(tile);
+    });
+}
+
+// Funkcja do tworzenia kafli na podstawie danych z wiersza
+function createTile(item) {
+    const wytwornia = item.wytwornia;
+    const nr = item.nr;
+    const artystaZespol = item.artysta + ' - ' + item.zespol;
+    const ilosc = parseInt(item.ilosc);
+    const kolor = item.kolor;
+
+    const kafelColor = kolor.toLowerCase();
+
+    const tile = document.createElement('div');
+    tile.classList.add('tile');
+    tile.style.backgroundColor = kafelColor;
+
+    tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
+
+    tile.style.width = '300px';
+    tile.style.height = '450px';
+
+    tile.style.fontFamily = 'sans-serif';
+
+    const thumbnailContainer = document.createElement('div');
+    thumbnailContainer.classList.add('thumbnail-container');
+    thumbnailContainer.style.width = '100%';
+    thumbnailContainer.style.height = '300px';
+
+    const thumbnailImage = document.createElement('div');
+    thumbnailImage.classList.add('thumbnail-image');
+    // Możesz dodać tutaj dowolny obraz miniatury, jeśli masz je dostępne lokalnie
+
+    thumbnailContainer.appendChild(thumbnailImage);
+
+    tile.appendChild(thumbnailContainer);
+    tile.innerHTML += `
+        <h3>${wytwornia} ${nr}</h3>
+        <p><strong>${artystaZespol}</strong></p>
+        <p>Ilość: <strong>${ilosc}</strong></p>
+    `;
+
+    return tile;
+}
 
         // Funkcja do zastosowania filtru
         function applyFilter() {
