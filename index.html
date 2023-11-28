@@ -26,7 +26,7 @@
 <body>
 
     <div id="tiles-container"></div>
-
+    <script src="fetch-discogs-thumbnails.js"></script>
     <script>
         // Adres URL publicznego arkusza
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
@@ -223,7 +223,27 @@
             document.title = "Moja kolekcja kaset ECHO/JAM";
             fetchData();
         };
-    </script>
+/ Dodaj poniższy kod, aby używać funkcji fetchDiscogsThumbnail z załadowanego skryptu
+  async function fetchDiscogsThumbnailWrapper(releaseId) {
+    try {
+      const apiKey = 'your_discogs_api_key'; // Zastąp kluczem API Discogs
+      const thumbnailUrl = await fetchDiscogsThumbnail(releaseId, apiKey);
+
+      if (thumbnailUrl) {
+        console.log('Pobrano miniaturę:', thumbnailUrl);
+      } else {
+        console.log('Miniatura niedostępna.');
+      }
+    } catch (error) {
+      console.error('Błąd pobierania miniatury z Discogs:', error);
+    }
+  }
+
+  // Przykładowe użycie
+  const releaseIdToFetch = '123456'; // Zastąp identyfikatorem rzeczywistego release
+  fetchDiscogsThumbnailWrapper(releaseIdToFetch);
+</script>
+
 
 </body>
 
