@@ -73,6 +73,7 @@
                         zespol: columns[4].textContent.trim(),
                         ilosc: parseInt(columns[6].textContent.trim()),
                         kolor: columns[9].textContent.trim(),
+                        miniatura: columns[10].textContent.trim(),
                     };
                 }).filter(item => item !== null);
 
@@ -124,6 +125,7 @@
             const artystaZespol = item.artysta + ' - ' + item.zespol;
             const ilosc = parseInt(item.ilosc);
             const kolor = item.kolor;
+            const miniatura = item.miniatura;
 
             const kafelColor = kolor ? kolor.toLowerCase() : ''; // Sprawdź, czy kolor nie jest undefined/null
 
@@ -145,8 +147,19 @@
 
             const thumbnailImage = document.createElement('div');
             thumbnailImage.classList.add('thumbnail-image');
-            // Możesz dodać tutaj dowolny obraz miniatury, jeśli masz je dostępne lokalnie
-
+            
+            // Dodawanie obrazu miniatury
+            const miniatura = 'Ścieżka/do/twojej/miniatury.jpg'; // Zmień na rzeczywistą ścieżkę do twojej miniatury
+            
+            // Utwórz element obrazu
+            const imageElement = document.createElement('img');
+            imageElement.src = miniatura;
+            imageElement.alt = 'Miniatura'; // Dodaj tekst alternatywny dla obrazu (opcjonalne)
+            
+            // Dodaj obraz miniatury do elementu miniatury
+            thumbnailImage.appendChild(imageElement);
+            
+            // Dodaj element miniatury do kontenera
             thumbnailContainer.appendChild(thumbnailImage);
 
             tile.appendChild(thumbnailContainer);
