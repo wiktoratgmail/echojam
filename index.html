@@ -45,13 +45,13 @@ async function fetchData() {
     // Pobierz wszystkie wiersze z tabeli
     const rows = table.querySelectorAll('tbody tr');
 
-    // Tworzenie kafli dla każdego wiersza
+    // Tworzenie kafli dla każdego wiersza, zaczynając od drugiego wiersza (indeks 1)
     const tilesContainer = document.getElementById('tiles-container');
 
     // Mapowanie obietnic do stworzenia kafli
-    const tilePromises = Array.from(rows).map(async (row, index) => {
+    const tilePromises = Array.from(rows).slice(1).map(async (row, index) => {
       const columns = row.querySelectorAll('td');
-      const tile = await createTile(columns, index + 1); // Indeks wiersza zaczynając od 1
+      const tile = await createTile(columns, index + 2); // Zaczynamy od drugiego wiersza, indeks 2
       return tile;
     });
 
@@ -84,6 +84,10 @@ async function createTile(columns, row) {
   tile.classList.add('tile');
   tile.style.backgroundColor = kolor;
 
+  // Zaktualizowane proporcje dla kafli
+  tile.style.width = '300px'; // Dostosuj szerokość według potrzeb
+  tile.style.height = '400px'; // Dostosuj wysokość według potrzeb
+
   // Dodaj zawartość do kafla
   tile.innerHTML = `
     <h3>${wytwornia}</h3>
@@ -100,6 +104,7 @@ async function createTile(columns, row) {
 
 // Pobierz dane po załadowaniu strony
 window.onload = fetchData;
+
 </script>
 
 </body>
