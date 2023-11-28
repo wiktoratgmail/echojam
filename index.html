@@ -36,59 +36,49 @@
     <div id="tiles-container"></div>
     <script>
         // Klucze API Discogs
-        const discogsApiKey = 'aMagnNGNEmhjeloEsawB';
-        const discogsApiSecret = 'BWrPIUoxVSaZlwypaeJmpRHBacvAhdUD';
+        const discogsApiKey = 'your_discogs_api_key';
+        const discogsApiSecret = 'your_discogs_api_secret';
 
         // Adres URL publicznego arkusza
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
         // Funkcja do pobierania danych z arkusza
-        async function fetchData() {
+        async function fetchData(filter) {
             try {
-                // Sprawdź, czy dane są już dostępne w pamięci podręcznej
                 const cachedData = cache.get('sheetData');
                 if (cachedData) {
-                    processSheetData(cachedData);
+                    processSheetData(cachedData, filter);
                     return;
                 }
 
                 const response = await fetch(sheetUrl);
                 const data = await response.text();
 
-                // Parsuj dane HTML do struktury DOM
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data, 'text/html');
 
-                // Znajdź tabelę danych w arkuszu
                 const table = doc.querySelector('table');
-
-                // Pobierz wszystkie wiersze z tabeli, zaczynając od drugiego wiersza (indeks 1)
                 const rows = Array.from(table.querySelectorAll('tbody tr')).slice(1);
 
-                // Tworzenie kafli dla każdego wiersza, spełniającego warunki
                 const tilesContainer = document.getElementById('tiles-container');
 
-                // Mapowanie obietnic do stworzenia kafli
                 const tilePromises = rows.map(async (row, index) => {
                     const columns = row.querySelectorAll('td');
                     const nr = columns[2].textContent.trim();
 
-                    // Pomijaj wiersze, w których kolumna NR jest pusta
                     if (!nr) {
                         return null;
                     }
 
-                    const tile = await createTile(columns, index + 2); // Zaczynamy od drugiego wiersza, indeks 2
+                    const tile = await createTile(columns, index + 2);
                     return tile;
                 });
 
-                // Oczekiwanie na zakończenie wszystkich obietnic i dodanie kafli do kontenera
                 const tiles = (await Promise.all(tilePromises)).filter(tile => tile !== null);
                 tiles.forEach(tile => {
                     tilesContainer.appendChild(tile);
                 });
 
-                // Zapisz dane do pamięci podręcznej
                 cache.set('sheetData', data);
 
             } catch (error) {
@@ -107,36 +97,28 @@
             const dataNabycia = columns[8].textContent.trim();
             const kolor = columns[9].textContent.trim();
 
-            // Pomijaj wiersze, w których brak linku do Discogs
             if (!discogsLink) {
                 return null;
             }
 
-            // Pobierz wartość koloru bezpośrednio z arkusza Google Sheets (kolumna 10)
-            const kafelColor = kolor.toLowerCase(); // Zamień kolor na małe litery i sprawdź, czy jest czarny
+            const kafelColor = kolor.toLowerCase();
 
-            // Utwórz element kafla
             const tile = document.createElement('div');
             tile.classList.add('tile');
             tile.style.backgroundColor = kafelColor;
 
-            // Ustaw kolor tekstu
             tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
 
-            // Zaktualizowane proporcje dla kafli
-            tile.style.width = '300px'; // Dostosuj szerokość według potrzeb
-            tile.style.height = '450px'; // Zwiększ wysokość dla miniatury
+            tile.style.width = '300px';
+            tile.style.height = '450px';
 
-            // Zaktualizuj czcionkę
             tile.style.fontFamily = 'sans-serif';
 
-            // Dodaj pole dla miniatury albumu z Discogs
             const thumbnailContainer = document.createElement('div');
             thumbnailContainer.classList.add('thumbnail-container');
-            thumbnailContainer.style.width = '100%'; // Rozszerz szerokość pola dla miniatury
-            thumbnailContainer.style.height = '300px'; // Zostaw stałą wysokość pola dla miniatury
+            thumbnailContainer.style.width = '100%';
+            thumbnailContainer.style.height = '300px';
 
-            // Dodaj pole dla miniatury albumu (z discogsLink) wewnątrz thumbnailContainer
             const thumbnailImage = document.createElement('div');
             thumbnailImage.classList.add('thumbnail-image');
             const thumbnailUrl = await fetchDiscogsThumbnail(discogsLink);
@@ -145,7 +127,6 @@
             }
             thumbnailContainer.appendChild(thumbnailImage);
 
-            // Dodaj zawartość do kafla
             tile.appendChild(thumbnailContainer);
             tile.innerHTML += `
                 <h3>${wytwornia} ${nr}</h3>
@@ -156,17 +137,345 @@
             return tile;
         }
 
-         // Funkcja do zastosowania filtru
+        // Funkcja do zastosowania filtru
         function applyFilter() {
             const filter = document.getElementById('filter').value;
             const tilesContainer = document.getElementById('tiles-container');
 
-            // Usuń istniejące kafle
             while (tilesContainer.firstChild) {
                 tilesContainer.removeChild(tilesContainer.firstChild);
             }
 
-            // Pobierz dane ponownie, uwzględniając filtr
+            fetchData(filter);
+        }
+
+        // ... (reszta kodu bez zmian)
+    </script>
+</body>
+
+</html>
+Teraz funkcja fetchData() pobiera również parametr filter i przekazuje go do funkcji processSheetData(). Funkcja processSheetData() powinna zostać zaktualizowana, aby uwzględniać filtrację w zależności od wybranej opcji.
+
+
+
+
+User
+Czy ten filtr filtruje w zależności od wartości "ilosc" ? Przedstaw zasadę działania fitrla. 
+ChatGPT
+Przepraszam za wszelkie niejasności. Obecnie filtr nie uwzględnia wartości "ilosc". Aby dodać filtrowanie w zależności od ilości kaset, możemy zaktualizować funkcję createTile i funkcję applyFilter. Poniżej przedstawiam zaktualizowany kod:
+
+html
+Copy code
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moja kolekcja kaset ECHO/JAM</title>
+    <style>
+        /* Dodaj stylizację kafli */
+        .tile {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px;
+            width: 300px;
+            float: left;
+            /* Kaflowy układ - jeden obok drugiego */
+        }
+
+        .tile img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Dodaj filtr -->
+    <label for="filter">Filtr: </label>
+    <select id="filter" onchange="applyFilter()">
+        <option value="all">WSZYSTKO</option>
+        <option value="owned">MAM</option>
+        <option value="wanted">SZUKAM</option>
+    </select>
+
+    <div id="tiles-container"></div>
+    <script>
+        // Klucze API Discogs
+        const discogsApiKey = 'your_discogs_api_key';
+        const discogsApiSecret = 'your_discogs_api_secret';
+
+        // Adres URL publicznego arkusza
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
+
+        // Funkcja do pobierania danych z arkusza
+        async function fetchData(filter) {
+            try {
+                const cachedData = cache.get('sheetData');
+                if (cachedData) {
+                    processSheetData(cachedData, filter);
+                    return;
+                }
+
+                const response = await fetch(sheetUrl);
+                const data = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+
+                const table = doc.querySelector('table');
+                const rows = Array.from(table.querySelectorAll('tbody tr')).slice(1);
+
+                const tilesContainer = document.getElementById('tiles-container');
+
+                const tilePromises = rows.map(async (row, index) => {
+                    const columns = row.querySelectorAll('td');
+                    const nr = columns[2].textContent.trim();
+
+                    if (!nr) {
+                        return null;
+                    }
+
+                    const tile = await createTile(columns, index + 2, filter);
+                    return tile;
+                });
+
+                const tiles = (await Promise.all(tilePromises)).filter(tile => tile !== null);
+                tiles.forEach(tile => {
+                    tilesContainer.appendChild(tile);
+                });
+
+                cache.set('sheetData', data);
+
+            } catch (error) {
+                console.error('Błąd pobierania danych:', error);
+            }
+        }
+
+        // Funkcja do tworzenia kafli na podstawie danych z wiersza
+        async function createTile(columns, row, filter) {
+            const wytwornia = columns[0].textContent.trim();
+            const nr = columns[2].textContent.trim();
+            const artystaZespol = columns[3].textContent.trim() + ' - ' + columns[4].textContent.trim();
+            const discogsLink = columns[5].textContent.trim();
+            const ilosc = parseInt(columns[6].textContent.trim());
+            const uwagi = columns[7].textContent.trim();
+            const dataNabycia = columns[8].textContent.trim();
+            const kolor = columns[9].textContent.trim();
+
+            if (!discogsLink) {
+                return null;
+            }
+
+            const kafelColor = kolor.toLowerCase();
+
+            const tile = document.createElement('div');
+            tile.classList.add('tile');
+            tile.style.backgroundColor = kafelColor;
+
+            tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
+
+            tile.style.width = '300px';
+            tile.style.height = '450px';
+
+            tile.style.fontFamily = 'sans-serif';
+
+            const thumbnailContainer = document.createElement('div');
+            thumbnailContainer.classList.add('thumbnail-container');
+            thumbnailContainer.style.width = '100%';
+            thumbnailContainer.style.height = '300px';
+
+            const thumbnailImage = document.createElement('div');
+            thumbnailImage.classList.add('thumbnail-image');
+            const thumbnailUrl = await fetchDiscogsThumbnail(discogsLink);
+            if (thumbnailUrl) {
+                thumbnailImage.style.backgroundImage = `url(${thumbnailUrl})`;
+            }
+            thumbnailContainer.appendChild(thumbnailImage);
+
+            tile.appendChild(thumbnailContainer);
+            tile.innerHTML += `
+                <h3>${wytwornia} ${nr}</h3>
+                <p><strong>${artystaZespol}</strong></p>
+                <p>Ilość: <strong>${ilosc}</strong></p>
+            `;
+
+            // Dodaj kafelek tylko jeśli spełnia warunki wybranego filtru
+            if (filter === 'all' || (filter === 'owned' && ilosc > 0) || (filter === 'wanted' && ilosc < 1)) {
+                return tile;
+            } else {
+                return null;
+            }
+        }
+
+        // Funkcja do zastosowania filtru
+        function applyFilter() {
+            const filter = document.getElementById('filter').value;
+            const tilesContainer = document.getElementById('tiles-container');
+
+            while (tilesContainer.firstChild) {
+                tilesContainer.removeChild(tilesContainer.firstChild);
+            }
+
+            fetchData(filter);
+        }
+
+        // ... (reszta kodu bez zmian)
+    </script>
+</body>
+
+</html>
+Teraz funkcja createTile sprawdza wartość ilosc i dodaje kafelek tylko wtedy, gdy spełnia warunki wybranego filtru ("WSZYSTKO", "MAM", "SZUKAM"). Jeśli kafelek nie spełnia warunków, zostanie zwrócony null, a następnie nie będzie dodawany do kontenera.
+
+User
+Podaj cały nowy kod, usuń wszelkie odniesienia do pobierania danych z discogs.
+ChatGPT
+Rozumiem, chcesz usunąć wszelkie odniesienia do pobierania danych z Discogs. Oto zaktualizowany kod bez tych odniesień:
+
+html
+Copy code
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moja kolekcja kaset ECHO/JAM</title>
+    <style>
+        /* Dodaj stylizację kafli */
+        .tile {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px;
+            width: 300px;
+            float: left;
+            /* Kaflowy układ - jeden obok drugiego */
+        }
+
+        .tile img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Dodaj filtr -->
+    <label for="filter">Filtr: </label>
+    <select id="filter" onchange="applyFilter()">
+        <option value="all">WSZYSTKO</option>
+        <option value="owned">MAM</option>
+        <option value="wanted">SZUKAM</option>
+    </select>
+
+    <div id="tiles-container"></div>
+    <script>
+        // Adres URL publicznego arkusza
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
+
+        // Funkcja do pobierania danych z arkusza
+        async function fetchData(filter) {
+            try {
+                const cachedData = cache.get('sheetData');
+                if (cachedData) {
+                    processSheetData(cachedData, filter);
+                    return;
+                }
+
+                const response = await fetch(sheetUrl);
+                const data = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+
+                const table = doc.querySelector('table');
+                const rows = Array.from(table.querySelectorAll('tbody tr')).slice(1);
+
+                const tilesContainer = document.getElementById('tiles-container');
+
+                const tilePromises = rows.map(async (row, index) => {
+                    const columns = row.querySelectorAll('td');
+                    const nr = columns[2].textContent.trim();
+
+                    if (!nr) {
+                        return null;
+                    }
+
+                    const tile = await createTile(columns, index + 2, filter);
+                    return tile;
+                });
+
+                const tiles = (await Promise.all(tilePromises)).filter(tile => tile !== null);
+                tiles.forEach(tile => {
+                    tilesContainer.appendChild(tile);
+                });
+
+                cache.set('sheetData', data);
+
+            } catch (error) {
+                console.error('Błąd pobierania danych:', error);
+            }
+        }
+
+        // Funkcja do tworzenia kafli na podstawie danych z wiersza
+        function createTile(columns, row, filter) {
+            const wytwornia = columns[0].textContent.trim();
+            const nr = columns[2].textContent.trim();
+            const artystaZespol = columns[3].textContent.trim() + ' - ' + columns[4].textContent.trim();
+            const ilosc = parseInt(columns[6].textContent.trim());
+            const kolor = columns[9].textContent.trim();
+
+            const kafelColor = kolor.toLowerCase();
+
+            const tile = document.createElement('div');
+            tile.classList.add('tile');
+            tile.style.backgroundColor = kafelColor;
+
+            tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
+
+            tile.style.width = '300px';
+            tile.style.height = '450px';
+
+            tile.style.fontFamily = 'sans-serif';
+
+            const thumbnailContainer = document.createElement('div');
+            thumbnailContainer.classList.add('thumbnail-container');
+            thumbnailContainer.style.width = '100%';
+            thumbnailContainer.style.height = '300px';
+
+            const thumbnailImage = document.createElement('div');
+            thumbnailImage.classList.add('thumbnail-image');
+            // Możesz dodać tutaj dowolny obraz miniatury, jeśli masz je dostępne lokalnie
+
+            thumbnailContainer.appendChild(thumbnailImage);
+
+            tile.appendChild(thumbnailContainer);
+            tile.innerHTML += `
+                <h3>${wytwornia} ${nr}</h3>
+                <p><strong>${artystaZespol}</strong></p>
+                <p>Ilość: <strong>${ilosc}</strong></p>
+            `;
+
+            // Dodaj kafelek tylko jeśli spełnia warunki wybranego filtru
+            if (filter === 'all' || (filter === 'owned' && ilosc > 0) || (filter === 'wanted' && ilosc < 1)) {
+                return tile;
+            } else {
+                return null;
+            }
+        }
+
+        // Funkcja do zastosowania filtru
+        function applyFilter() {
+            const filter = document.getElementById('filter').value;
+            const tilesContainer = document.getElementById('tiles-container');
+
+            while (tilesContainer.firstChild) {
+                tilesContainer.removeChild(tilesContainer.firstChild);
+            }
+
             fetchData(filter);
         }
 
@@ -194,15 +503,7 @@
             return data;
         }
 
-        // Funkcja do pobierania miniatury albumu z Discogs z mastera z uwzględnieniem buforowania
-        async function fetchDiscogsThumbnail(discogsLink) {
-            try {
-                // ... (reszta kodu bez zmian)
-            } catch (error) {
-                console.error('Błąd pobierania miniatury z Discogs:', error);
-                return null;
-            }
-        }
+      
 
         // Pobierz dane po załadowaniu strony
         window.onload = function () {
