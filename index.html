@@ -31,7 +31,14 @@ const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKz
 // Funkcja do pobierania danych z arkusza
 async function fetchData() {
   try {
-    const response = await fetch('https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml');
+    // Sprawdź, czy dane są już dostępne w pamięci podręcznej
+    const cachedData = cache.get('sheetData');
+    if (cachedData) {
+      processSheetData(cachedData);
+      return;
+    }
+
+    const response = await fetch(sheetUrl); // Użyj zmiennej sheetUrl
     const data = await response.text();
 
     // Parsuj dane HTML do struktury DOM
@@ -66,6 +73,9 @@ async function fetchData() {
     tiles.forEach(tile => {
       tilesContainer.appendChild(tile);
     });
+
+    // Zapisz dane do pamięci podręcznej
+    cache.set('sheetData', data);
 
   } catch (error) {
     console.error('Błąd pobierania danych:', error);
@@ -200,8 +210,17 @@ async function fetchDiscogsThumbnail(discogsLink) {
     return null;
   }
 }
+
+  // Pobierz dane po załadowaniu strony
+window.onload = function () {
+  // Zmiana tytułu strony
+  document.title = "Moja kolekcja kaset ECHO/JAM";
+  fetchData();
+};
  
 </script>
 
+
+  
 </body>
 </html>
