@@ -24,7 +24,6 @@
 </head>
 
 <body>
-
     <!-- Dodaj filtr -->
     <label for="filter">Filtr: </label>
     <select id="filter" onchange="applyFilter()">
@@ -34,16 +33,17 @@
     </select>
 
     <div id="tiles-container"></div>
+
     <script>
         // Adres URL publicznego arkusza
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
         // Funkcja do pobierania danych z arkusza
-        async function fetchData() {
+        async function fetchData(filter) {
             try {
                 const cachedData = cache.get('sheetData');
                 if (cachedData) {
-                    processSheetData(cachedData);
+                    renderTiles(JSON.parse(cachedData), filter);
                     return;
                 }
 
@@ -58,7 +58,7 @@
 
                 const tilesContainer = document.getElementById('tiles-container');
 
-                const tilePromises = rows.map(async (row, index) => {
+                const rowData = rows.map((row, index) => {
                     const columns = row.querySelectorAll('td');
                     const nr = columns[2].textContent.trim();
 
@@ -66,139 +66,113 @@
                         return null;
                     }
 
-                    const tile = createTile(columns, index + 2);
-                    return tile;
-                });
+                    return {
+                        wytwornia: columns[0].textContent.trim(),
+                        nr,
+                        artysta: columns[3].textContent.trim(),
+                        zespol: columns[4].textContent.trim(),
+                        ilosc: parseInt(columns[6].textContent.trim()),
+                        kolor: columns[9].textContent.trim(),
+                    };
+                }).filter(item => item !== null);
 
-                const tiles = (await Promise.all(tilePromises)).filter(tile => tile !== null);
-                tiles.forEach(tile => {
-                    tilesContainer.appendChild(tile);
-                });
+                // Renderuj kafle na podstawie przefiltrowanych danych
+                renderTiles(rowData, filter);
 
-                cache.set('sheetData', data);
+                // Zapisz dane do pamięci podręcznej
+                cache.set('sheetData', JSON.stringify(rowData));
 
             } catch (error) {
                 console.error('Błąd pobierania danych:', error);
             }
         }
 
-       // Funkcja do renderowania kafli na podstawie danych z arkusza
-function renderTiles(data, filter) {
-    const tilesContainer = document.getElementById('tiles-container');
-
-    // Czyść istniejące kafle przed renderowaniem nowych
-    while (tilesContainer.firstChild) {
-        tilesContainer.removeChild(tilesContainer.firstChild);
-    }
-
-    // Filtruj dane na podstawie wybranego filtra
-    const filteredData = data.filter(item => {
-        const ilosc = parseInt(item.ilosc);
-        if (filter === 'all') {
-            return true; // Wyświetlaj wszystkie
-        } else if (filter === 'owned' && ilosc > 0) {
-            return true; // Wyświetlaj z ilością większą niż 0
-        } else if (filter === 'wanted' && ilosc < 1) {
-            return true; // Wyświetlaj z ilością mniejszą niż 1
-        } else {
-            return false; // Wyświetlaj tylko pozostałe przypadki
-        }
-    });
-
-    // Renderuj kafle na podstawie przefiltrowanych danych
-    filteredData.forEach(item => {
-        const tile = createTile(item);
-        tilesContainer.appendChild(tile);
-    });
-}
-
-// Funkcja do tworzenia kafli na podstawie danych z wiersza
-function createTile(item) {
-    const wytwornia = item.wytwornia;
-    const nr = item.nr;
-    const artystaZespol = item.artysta + ' - ' + item.zespol;
-    const ilosc = parseInt(item.ilosc);
-    const kolor = item.kolor;
-
-    const kafelColor = kolor ? kolor.toLowerCase() : ''; // Sprawdź, czy kolor nie jest undefined/null
-
-    const tile = document.createElement('div');
-    tile.classList.add('tile');
-    tile.style.backgroundColor = kafelColor;
-
-    tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
-
-    tile.style.width = '300px';
-    tile.style.height = '450px';
-
-    tile.style.fontFamily = 'sans-serif';
-
-    const thumbnailContainer = document.createElement('div');
-    thumbnailContainer.classList.add('thumbnail-container');
-    thumbnailContainer.style.width = '100%';
-    thumbnailContainer.style.height = '300px';
-
-    const thumbnailImage = document.createElement('div');
-    thumbnailImage.classList.add('thumbnail-image');
-    // Możesz dodać tutaj dowolny obraz miniatury, jeśli masz je dostępne lokalnie
-
-    thumbnailContainer.appendChild(thumbnailImage);
-
-    tile.appendChild(thumbnailContainer);
-    tile.innerHTML += `
-        <h3>${wytwornia} ${nr}</h3>
-        <p><strong>${artystaZespol}</strong></p>
-        <p>Ilość: <strong>${ilosc}</strong></p>
-    `;
-
-    return tile;
-}
-
-
-        // Funkcja do zastosowania filtru
-        function applyFilter() {
-            const filter = document.getElementById('filter').value;
+        // Funkcja do renderowania kafli na podstawie danych z arkusza
+        function renderTiles(data, filter) {
             const tilesContainer = document.getElementById('tiles-container');
 
+            // Czyść istniejące kafle przed renderowaniem nowych
             while (tilesContainer.firstChild) {
                 tilesContainer.removeChild(tilesContainer.firstChild);
             }
 
+            // Filtruj dane na podstawie wybranego filtra
+            const filteredData = data.filter(item => {
+                const ilosc = parseInt(item.ilosc);
+                if (filter === 'all') {
+                    return true; // Wyświetlaj wszystkie
+                } else if (filter === 'owned' && ilosc > 0) {
+                    return true; // Wyświetlaj z ilością większą niż 0
+                } else if (filter === 'wanted' && ilosc < 1) {
+                    return true; // Wyświetlaj z ilością mniejszą niż 1
+                } else {
+                    return false; // Wyświetlaj tylko pozostałe przypadki
+                }
+            });
+
+            // Renderuj kafle na podstawie przefiltrowanych danych
+            filteredData.forEach(item => {
+                const tile = createTile(item);
+                tilesContainer.appendChild(tile);
+            });
+        }
+
+        // Funkcja do tworzenia kafli na podstawie danych z wiersza
+        function createTile(item) {
+            const wytwornia = item.wytwornia;
+            const nr = item.nr;
+            const artystaZespol = item.artysta + ' - ' + item.zespol;
+            const ilosc = parseInt(item.ilosc);
+            const kolor = item.kolor;
+
+            const kafelColor = kolor ? kolor.toLowerCase() : ''; // Sprawdź, czy kolor nie jest undefined/null
+
+            const tile = document.createElement('div');
+            tile.classList.add('tile');
+            tile.style.backgroundColor = kafelColor;
+
+            tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
+
+            tile.style.width = '300px';
+            tile.style.height = '450px';
+
+            tile.style.fontFamily = 'sans-serif';
+
+            const thumbnailContainer = document.createElement('div');
+            thumbnailContainer.classList.add('thumbnail-container');
+            thumbnailContainer.style.width = '100%';
+            thumbnailContainer.style.height = '300px';
+
+            const thumbnailImage = document.createElement('div');
+            thumbnailImage.classList.add('thumbnail-image');
+            // Możesz dodać tutaj dowolny obraz miniatury, jeśli masz je dostępne lokalnie
+
+            thumbnailContainer.appendChild(thumbnailImage);
+
+            tile.appendChild(thumbnailContainer);
+            tile.innerHTML += `
+                <h3>${wytwornia} ${nr}</h3>
+                <p><strong>${artystaZespol}</strong></p>
+                <p>Ilość: <strong>${ilosc}</strong></p>
+            `;
+
+            return tile;
+        }
+
+        // Funkcja do zastosowania filtru
+        function applyFilter() {
+            const filter = document.getElementById('filter').value;
             fetchData(filter);
         }
 
-
         // Funkcja buforująca do przechowywania danych w pamięci podręcznej
         const cache = new Map();
-
-        // Funkcja buforująca asynchroniczna z uwzględnieniem limitu zapytań
-        async function bufferedFetch(url, cacheKey, cacheTime = 60000) {
-            if (cache.has(cacheKey)) {
-                const {
-                    data,
-                    timestamp
-                } = cache.get(cacheKey);
-                if (Date.now() - timestamp < cacheTime) {
-                    return data;
-                }
-            }
-
-            const response = await fetch(url);
-            const data = await response.json();
-            cache.set(cacheKey, {
-                data,
-                timestamp: Date.now()
-            });
-            return data;
-        }
-
-      
 
         // Pobierz dane po załadowaniu strony
         window.onload = function () {
             // Zmiana tytułu strony
             document.title = "Moja kolekcja kaset ECHO/JAM";
-            fetchData();
+            fetchData('all'); // Wartość domyślna to 'all'
         };
     </script>
 </body>
