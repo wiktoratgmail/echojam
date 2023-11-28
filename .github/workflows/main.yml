@@ -3,7 +3,7 @@ name: Fetch Discogs thumbnails
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   fetch-thumbnails:
