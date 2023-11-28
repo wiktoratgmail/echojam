@@ -26,7 +26,6 @@
 
 <script>
 // Adres URL publicznego arkusza
-// Adres URL publicznego arkusza
 const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
 // Funkcja do pobierania danych z arkusza
@@ -42,21 +41,28 @@ async function fetchData() {
     // Znajdź tabelę danych w arkuszu
     const table = doc.querySelector('table');
 
-    // Pobierz wszystkie wiersze z tabeli
-    const rows = table.querySelectorAll('tbody tr');
+    // Pobierz wszystkie wiersze z tabeli, zaczynając od drugiego wiersza (indeks 1)
+    const rows = Array.from(table.querySelectorAll('tbody tr')).slice(1);
 
-    // Tworzenie kafli dla każdego wiersza, zaczynając od drugiego wiersza (indeks 1)
+    // Tworzenie kafli dla każdego wiersza, spełniającego warunki
     const tilesContainer = document.getElementById('tiles-container');
 
     // Mapowanie obietnic do stworzenia kafli
-    const tilePromises = Array.from(rows).slice(1).map(async (row, index) => {
+    const tilePromises = rows.map(async (row, index) => {
       const columns = row.querySelectorAll('td');
+      const nr = columns[2].textContent.trim();
+
+      // Pomijaj wiersze, w których kolumna NR jest pusta
+      if (!nr) {
+        return null;
+      }
+
       const tile = await createTile(columns, index + 2); // Zaczynamy od drugiego wiersza, indeks 2
       return tile;
     });
 
     // Oczekiwanie na zakończenie wszystkich obietnic i dodanie kafli do kontenera
-    const tiles = await Promise.all(tilePromises);
+    const tiles = (await Promise.all(tilePromises)).filter(tile => tile !== null);
     tiles.forEach(tile => {
       tilesContainer.appendChild(tile);
     });
@@ -75,25 +81,45 @@ async function createTile(columns, row) {
   const ilosc = parseInt(columns[6].textContent.trim());
   const uwagi = columns[7].textContent.trim();
   const dataNabycia = columns[8].textContent.trim();
+  const kolor = columns[9].textContent.trim();
+
+  // Pomijaj wiersze, w których brak linku do Discogs
+  if (!discogsLink) {
+    return null;
+  }
 
   // Pobierz wartość koloru bezpośrednio z arkusza Google Sheets (kolumna 10)
-  const kolor = columns[9].textContent.trim();
+  const kafelColor = kolor ? kolor : 'black'; // Domyślnie czarny, jeśli kolor nie jest określony
 
   // Utwórz element kafla
   const tile = document.createElement('div');
   tile.classList.add('tile');
-  tile.style.backgroundColor = kolor;
+  tile.style.backgroundColor = kafelColor;
+
+  // Ustaw kolor tekstu
+  tile.style.color = kafelColor === 'black' ? 'gold' : 'white';
 
   // Zaktualizowane proporcje dla kafli
   tile.style.width = '300px'; // Dostosuj szerokość według potrzeb
   tile.style.height = '400px'; // Dostosuj wysokość według potrzeb
 
+  // Zaktualizuj czcionkę
+  tile.style.fontFamily = 'sans-serif';
+
+  // Dodaj pole dla miniatury albumu z Discogs
+  const thumbnailContainer = document.createElement('div');
+  thumbnailContainer.classList.add('thumbnail-container');
+  const thumbnailUrl = await fetchDiscogsThumbnail(discogsLink);
+  if (thumbnailUrl) {
+    thumbnailContainer.style.backgroundImage = `url(${thumbnailUrl})`;
+  }
+  tile.appendChild(thumbnailContainer);
+
   // Dodaj zawartość do kafla
-  tile.innerHTML = `
+  tile.innerHTML += `
     <h3>${wytwornia}</h3>
     <p><strong>${artystaZespol}</strong></p>
     <p>Nr: ${nr}</p>
-    <p><a href="${discogsLink}" target="_blank">Link do Discogs</a></p>
     <p>Ilość: <strong>${ilosc}</strong></p>
     <p>${uwagi}</p>
     <p>Data nabycia: ${ilosc !== 0 ? dataNabycia : 'Brak'}</p>
@@ -102,9 +128,30 @@ async function createTile(columns, row) {
   return tile;
 }
 
-// Pobierz dane po załadowaniu strony
-window.onload = fetchData;
+// Funkcja do pobierania miniatury albumu z Discogs
+async function fetchDiscogsThumbnail(discogsLink) {
+  try {
+    const response = await fetch(`https://api.discogs.com/database/search?q=${encodeURIComponent(discogsLink)}`);
+    const data = await response.json();
+    const firstResult = data.results[0];
 
+    if (firstResult && firstResult.thumb) {
+      return firstResult.thumb;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Błąd pobierania miniatury z Discogs:', error);
+    return null;
+  }
+}
+
+// Pobierz dane po załadowaniu strony
+window.onload = function () {
+  // Zmiana tytułu strony
+  document.title = "Moja kolekcja kaset ECHO/JAM";
+  fetchData();
+};
 </script>
 
 </body>
