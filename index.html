@@ -66,12 +66,12 @@
         // Adres URL publicznego arkusza
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
-       // Funkcja do pobierania danych z arkusza
+      // Funkcja do pobierania danych z arkusza
     async function fetchData(filter, searchQuery) {
         try {
             const cachedData = cache.get('sheetData');
             if (cachedData) {
-                renderTiles(JSON.parse(cachedData), filter, searchQuery);
+                renderTiles(JSON.parse(cachedData), filter, searchQuery); // Dodano przekazywanie searchQuery
                 return;
             }
 
@@ -115,6 +115,7 @@
             console.error('Błąd pobierania danych:', error);
         }
     }
+
         
 
         // Funkcja do renderowania kafli na podstawie danych z arkusza
