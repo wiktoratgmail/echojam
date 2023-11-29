@@ -236,20 +236,20 @@
             return tile;
         }
 
-        // Funkcja do zastosowania filtru
-        function applyFilter() {
-            const filter = document.getElementById('filter').value;
-            const searchQuery = document.getElementById('search').value.toLowerCase();
-            fetchData(filter, searchQuery);
-        }
+       // Funkcja do zastosowania filtru
+function applyFilter() {
+    const filter = document.getElementById('filter').value;
+    const searchQuery = document.getElementById('search').value.toLowerCase();
+    fetchData(filter, searchQuery);
+}
 
-        // Funkcja do aktualizacji wyników wyszukiwania
-        function applySearch() {
-            const filter = document.getElementById('filter').value;
-            const searchQuery = document.getElementById('search').value.toLowerCase();
-            fetchData(filter, searchQuery);
-        }
-        
+// Funkcja do aktualizacji wyników wyszukiwania
+function applySearch() {
+    const filter = document.getElementById('filter').value;
+    const searchQuery = document.getElementById('search').value.toLowerCase();
+    fetchData(filter, searchQuery);
+}
+
         
 
         // Funkcja buforująca do przechowywania danych w pamięci podręcznej
