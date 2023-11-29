@@ -182,7 +182,7 @@
              
             // Utwórz element obrazu
 
-             if (miniatura != '') {
+             if (miniatura != '' ) {
                        const imageElement = document.createElement('img');
             imageElement.src = miniatura;
             // imageElement.alt = '?'; // Dodaj tekst alternatywny dla obrazu (opcjonalne)
@@ -193,7 +193,12 @@
             // Dodaj element miniatury do kontenera
             thumbnailContainer.appendChild(thumbnailImage);
                 }
-            else
+            else if (kolor == "#000000")
+            {
+                thumbnailContainer.style.background = '#000000';
+            }    
+            
+            else 
              {
                   thumbnailImage.innerHTML += `
                
