@@ -66,55 +66,55 @@
         // Adres URL publicznego arkusza
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
-        // Funkcja do pobierania danych z arkusza
-        async function fetchData(filter) {
-            try {
-                const cachedData = cache.get('sheetData');
-                if (cachedData) {
-                    renderTiles(JSON.parse(cachedData), filter);
-                    return;
+       // Funkcja do pobierania danych z arkusza
+    async function fetchData(filter, searchQuery) {
+        try {
+            const cachedData = cache.get('sheetData');
+            if (cachedData) {
+                renderTiles(JSON.parse(cachedData), filter, searchQuery);
+                return;
+            }
+
+            const response = await fetch(sheetUrl);
+            const data = await response.text();
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+
+            const table = doc.querySelector('table');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).slice(1);
+
+            const tilesContainer = document.getElementById('tiles-container');
+
+            const rowData = rows.map((row, index) => {
+                const columns = row.querySelectorAll('td');
+                const nr = columns[2].textContent.trim();
+
+                if (!nr) {
+                    return null;
                 }
 
-                const response = await fetch(sheetUrl);
-                const data = await response.text();
+                return {
+                    wytwornia: columns[0].textContent.trim(),
+                    nr,
+                    artysta: columns[3].textContent.trim(),
+                    album: columns[4].textContent.trim(),
+                    ilosc: parseInt(columns[6].textContent.trim()),
+                    kolor: columns[9].textContent.trim(),
+                    miniatura: columns[10].textContent.trim(),
+                };
+            }).filter(item => item !== null);
 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(data, 'text/html');
+            // Renderuj kafle na podstawie przefiltrowanych danych
+            renderTiles(rowData, filter, searchQuery);
 
-                const table = doc.querySelector('table');
-                const rows = Array.from(table.querySelectorAll('tbody tr')).slice(1);
+            // Zapisz dane do pamięci podręcznej
+            cache.set('sheetData', JSON.stringify(rowData));
 
-                const tilesContainer = document.getElementById('tiles-container');
-
-                const rowData = rows.map((row, index) => {
-                    const columns = row.querySelectorAll('td');
-                    const nr = columns[2].textContent.trim();
-
-                    if (!nr) {
-                        return null;
-                    }
-
-                    return {
-                        wytwornia: columns[0].textContent.trim(),
-                        nr,
-                        artysta: columns[3].textContent.trim(),
-                        album: columns[4].textContent.trim(),
-                        ilosc: parseInt(columns[6].textContent.trim()),
-                        kolor: columns[9].textContent.trim(),
-                        miniatura: columns[10].textContent.trim(),
-                    };
-                }).filter(item => item !== null);
-
-                // Renderuj kafle na podstawie przefiltrowanych danych
-                renderTiles(rowData, filter);
-
-                // Zapisz dane do pamięci podręcznej
-                cache.set('sheetData', JSON.stringify(rowData));
-
-            } catch (error) {
-                console.error('Błąd pobierania danych:', error);
-            }
+        } catch (error) {
+            console.error('Błąd pobierania danych:', error);
         }
+    }
 
         // Funkcja do renderowania kafli na podstawie danych z arkusza
         function renderTiles(data, filter) {
