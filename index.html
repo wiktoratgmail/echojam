@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="icon" href="favicon.ico" type="image/x-icon" />
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -68,12 +68,12 @@
         // Adres URL publicznego arkusza
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
 
-      // Funkcja do pobierania danych z arkusza
+     // Funkcja do pobierania danych z arkusza
     async function fetchData(filter, searchQuery) {
         try {
             const cachedData = cache.get('sheetData');
             if (cachedData) {
-                renderTiles(JSON.parse(cachedData), filter, searchQuery); // Dodano przekazywanie searchQuery
+                renderTiles(JSON.parse(cachedData), filter, searchQuery);
                 return;
             }
 
@@ -116,8 +116,42 @@
         } catch (error) {
             console.error('Błąd pobierania danych:', error);
         }
-    }
 
+        // Funkcja do renderowania kafli na podstawie danych z arkusza
+        function renderTiles(data, filter, searchQuery) {
+            const tilesContainer = document.getElementById('tiles-container');
+
+            // Czyść istniejące kafle przed renderowaniem nowych
+            while (tilesContainer.firstChild) {
+                tilesContainer.removeChild(tilesContainer.firstChild);
+            }
+
+            // Filtruj dane na podstawie wybranego filtra i wyszukiwania
+            const filteredData = data.filter(item => {
+                const ilosc = parseInt(item.ilosc);
+                const artistLowerCase = item.artysta.toLowerCase();
+                const albumLowerCase = item.album.toLowerCase();
+                const wytworniaLowerCase = item.wytwornia.toLowerCase();
+
+                const filterCondition = filter === 'all' ||
+                    (filter === 'owned' && ilosc > 0) ||
+                    (filter === 'wanted' && ilosc < 1);
+
+                const searchCondition = searchQuery === '' ||
+                    artistLowerCase.includes(searchQuery) ||
+                    albumLowerCase.includes(searchQuery) ||
+                    wytworniaLowerCase.includes(searchQuery);
+
+                return filterCondition && searchCondition;
+            });
+
+            // Renderuj kafle na podstawie przefiltrowanych danych
+            filteredData.forEach(item => {
+                const tile = createTile(item);
+                tilesContainer.appendChild(tile);
+            });
+        }
+    }
         
 
         // Funkcja do renderowania kafli na podstawie danych z arkusza
