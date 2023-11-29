@@ -48,12 +48,17 @@
 
 <body>
     <!-- Dodaj filtr -->
-    <label for="filter">Filtr: </label>
+   <label for="filter">Filtr wykonawcy: </label>
     <select id="filter" onchange="applyFilter()">
         <option value="all">WSZYSTKO</option>
         <option value="owned">MAM</option>
         <option value="wanted">SZUKAM</option>
     </select>
+
+    <label for="search">Wyszukaj: </label>
+    <input type="text" id="search" oninput="applySearch()">
+
+ 
 
     <div id="tiles-container"></div>
 
@@ -120,18 +125,23 @@
                 tilesContainer.removeChild(tilesContainer.firstChild);
             }
 
-            // Filtruj dane na podstawie wybranego filtra
+           // Filtruj dane na podstawie wybranego filtra i wyszukiwania
             const filteredData = data.filter(item => {
                 const ilosc = parseInt(item.ilosc);
-                if (filter === 'all') {
-                    return true; // Wyświetlaj wszystkie
-                } else if (filter === 'owned' && ilosc > 0) {
-                    return true; // Wyświetlaj z ilością większą niż 0
-                } else if (filter === 'wanted' && ilosc < 1) {
-                    return true; // Wyświetlaj z ilością mniejszą niż 1
-                } else {
-                    return false; // Wyświetlaj tylko pozostałe przypadki
-                }
+                const artistLowerCase = item.artysta.toLowerCase();
+                const albumLowerCase = item.album.toLowerCase();
+                const wytworniaLowerCase = item.wytwornia.toLowerCase();
+
+                const filterCondition = filter === 'all' ||
+                    (filter === 'owned' && ilosc > 0) ||
+                    (filter === 'wanted' && ilosc < 1);
+
+                const searchCondition = searchQuery === '' ||
+                    artistLowerCase.includes(searchQuery) ||
+                    albumLowerCase.includes(searchQuery) ||
+                    wytworniaLowerCase.includes(searchQuery);
+
+                return filterCondition && searchCondition;
             });
 
             // Renderuj kafle na podstawie przefiltrowanych danych
@@ -225,8 +235,18 @@
         // Funkcja do zastosowania filtru
         function applyFilter() {
             const filter = document.getElementById('filter').value;
-            fetchData(filter);
+            const searchQuery = document.getElementById('search').value.toLowerCase();
+            fetchData(filter, searchQuery);
         }
+
+        // Funkcja do aktualizacji wyników wyszukiwania
+        function applySearch() {
+            const filter = document.getElementById('filter').value;
+            const searchQuery = document.getElementById('search').value.toLowerCase();
+            fetchData(filter, searchQuery);
+        }
+        
+        
 
         // Funkcja buforująca do przechowywania danych w pamięci podręcznej
         const cache = new Map();
