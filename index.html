@@ -55,6 +55,7 @@
         <option value="all">WSZYSTKO</option>
         <option value="owned">MAM</option>
         <option value="wanted">SZUKAM</option>
+           <option value="duble">DUBLE</option>
     </select>
 
     <label for="search">Wyszukaj: </label>
@@ -135,7 +136,9 @@
 
                 const filterCondition = filter === 'all' ||
                     (filter === 'owned' && ilosc > 0) ||
-                    (filter === 'wanted' && ilosc < 1);
+                    (filter === 'wanted' && ilosc < 1)
+                    ||
+                    (filter === 'duble' && ilosc > 1);
 
                 const searchCondition = searchQuery === '' ||
                     artistLowerCase.includes(searchQuery) ||
@@ -172,7 +175,8 @@
 
                 const filterCondition = filter === 'all' ||
                     (filter === 'owned' && ilosc > 0) ||
-                    (filter === 'wanted' && ilosc < 1);
+                    (filter === 'wanted' && ilosc < 1)||
+                  (filter === 'duble' && ilosc > 1);
 
                 const searchCondition = searchQuery === '' ||
                     artistLowerCase.includes(searchQuery) ||
