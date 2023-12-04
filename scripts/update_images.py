@@ -1,6 +1,6 @@
 import requests
-import json
 import os
+import json
 
 # URL do arkusza Google Spreadsheet
 spreadsheet_url = "https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/gviz/tq?tqx=out:json&tq&gid=0"
@@ -19,12 +19,14 @@ def download_image(image_url, target_path):
 
 def main():
     # Pobierz dane z arkusza Google Spreadsheet (zakłada formatowanie danych w formie JSON)
-    response = requests.get(spreadsheet_url + "/exec?format=json")
+    response = requests.get(spreadsheet_url)
     
-    # Wytnij niepotrzebne fragmenty JavaScript i pozostaw czysty JSON
-    json_data = response.text.split("google.visualization.Query.setResponse(")[1].rstrip(");")
-    
-    # Parsuj czysty JSON
+    # Wyciągnij fragment JSON z odpowiedzi
+    start_index = response.text.find("google.visualization.Query.setResponse(")
+    end_index = response.text.rfind(");")
+    json_data = response.text[start_index + len("google.visualization.Query.setResponse("):end_index]
+
+    # Parsuj JSON
     data = json.loads(json_data)
 
     # Utwórz katalog docelowy, jeśli nie istnieje
@@ -35,7 +37,7 @@ def main():
 
     # Iteruj przez dane i pobierz obrazki
     for row_number, row in enumerate(data["table"]["rows"], start=1):
-        image_url = row["c"][9]["v"]  # Zastąp indeks, aby uzyskać URL obrazków
+        image_url = row["c"][10]["v"]  # Kolumna "miniatura" (numer kolumny 10)
         if image_url:
             image_name = os.path.basename(image_url)
             target_path = os.path.join(target_directory, image_name)
