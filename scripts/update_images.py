@@ -2,7 +2,7 @@ import requests
 import os
 
 # URL do arkusza Google Spreadsheet
-spreadsheet_url = "URL_DO_ARKUSZA_GOOGLE_SPREADSHEET"
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml"
 
 # Katalog docelowy dla obrazków w repozytorium GitHub
 target_directory = "img"
