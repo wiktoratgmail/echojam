@@ -1,0 +1,35 @@
+name: Update Images
+
+on:
+  push:
+    branches:
+      - main  # zmień na nazwę głównej gałęzi w twoim przypadku
+
+jobs:
+  update-images:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'  # dostosuj wersję Pythona do swoich potrzeb
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Run script to update images
+      run: python .github/scripts/update_images.py  # dostosuj ścieżkę do swojego skryptu
+
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add img
+        git commit -m "Update images [skip ci]"
+        git push
