@@ -1,4 +1,5 @@
 import requests
+import json
 import os
 
 # URL do arkusza Google Spreadsheet
@@ -19,7 +20,12 @@ def download_image(image_url, target_path):
 def main():
     # Pobierz dane z arkusza Google Spreadsheet (zakłada formatowanie danych w formie JSON)
     response = requests.get(spreadsheet_url + "/exec?format=json")
-    data = response.json()
+    
+    # Wytnij niepotrzebne fragmenty JavaScript i pozostaw czysty JSON
+    json_data = response.text.split("google.visualization.Query.setResponse(")[1].rstrip(");")
+    
+    # Parsuj czysty JSON
+    data = json.loads(json_data)
 
     # Utwórz katalog docelowy, jeśli nie istnieje
     os.makedirs(target_directory, exist_ok=True)
@@ -28,8 +34,8 @@ def main():
     successful_rows = []
 
     # Iteruj przez dane i pobierz obrazki
-    for row_number, row in enumerate(data, start=1):
-        image_url = row.get("col_10")  # Zastąp nazwę kolumny z URL obrazków
+    for row_number, row in enumerate(data["table"]["rows"], start=1):
+        image_url = row["c"][9]["v"]  # Zastąp indeks, aby uzyskać URL obrazków
         if image_url:
             image_name = os.path.basename(image_url)
             target_path = os.path.join(target_directory, image_name)
