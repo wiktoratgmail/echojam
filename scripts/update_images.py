@@ -37,8 +37,9 @@ def main():
 
     # Iteruj przez dane i pobierz obrazki
     for row_number, row in enumerate(data["table"]["rows"], start=1):
-        image_url = row["c"][10]["v"]  # Kolumna "miniatura" (numer kolumny 10)
-        if image_url:
+        # Sprawdź, czy kolumna "miniatura" istnieje i ma wartość
+        if "c" in row and len(row["c"]) > 10 and row["c"][10] and "v" in row["c"][10] and row["c"][10]["v"]:
+            image_url = row["c"][10]["v"]  # Kolumna "miniatura" (numer kolumny 10)
             image_name = os.path.basename(image_url)
             target_path = os.path.join(target_directory, image_name)
 
