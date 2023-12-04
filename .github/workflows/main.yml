@@ -25,7 +25,8 @@ jobs:
 
     - name: Run script to update images
       run: |
-        python .github/scripts/update_images.py
+        python scripts/update_images.py
+        
         # Zapisz wynik wykonania skryptu w zmiennej środowiskowej
         SCRIPT_RESULT=$?
 
