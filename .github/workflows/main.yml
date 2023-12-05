@@ -24,6 +24,8 @@ jobs:
         pip install requests
 
     - name: Run script to update images
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         python scripts/update_images.py
         # Zapisz wynik wykonania skryptu w zmiennej środowiskowej
