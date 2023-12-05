@@ -26,9 +26,10 @@ jobs:
     - name: Run script to update images
       run: |
         python scripts/update_images.py
-        
         # Zapisz wynik wykonania skryptu w zmiennej środowiskowej
         SCRIPT_RESULT=$?
+        # Wyświetl wynik, aby ułatwić debugowanie
+        echo "Script result: $SCRIPT_RESULT"
 
     - name: Commit and push changes
       if: ${{ success() }}
@@ -37,4 +38,6 @@ jobs:
         git config --local user.name "GitHub Action"
         git add img
         git commit -m "Update images [skip ci]"
+        # Dodaj token dostępu do adresu repozytorium
+        git remote set-url origin "https://${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
         git push
