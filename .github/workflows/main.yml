@@ -13,19 +13,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Set up SSH keys
+      run: |
+        echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-
-    - name: Debug Info
-      run: |
-          echo "GH_TOKEN: $GH_TOKEN"
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          git remote -v
-          git branch -a
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
     - name: Install dependencies
       run: |
@@ -33,12 +30,12 @@ jobs:
         pip install requests
 
     - name: Run script to update images
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         python scripts/update_images.py
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         # Zapisz wynik wykonania skryptu w zmiennej środowiskowej
-        SCRIPT_RESULT=$?
+        SCRIPT_RESULT: ${{ steps.update-images.outputs.SCRIPT_RESULT }}
         # Wyświetl wynik, aby ułatwić debugowanie
         echo "Script result: $SCRIPT_RESULT"
 
@@ -49,6 +46,4 @@ jobs:
         git config --local user.name "GitHub Action"
         git add img
         git commit -m "Update images [skip ci]"
-        # Dodaj token dostępu do adresu repozytorium
-        git remote set-url origin "https://${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
         git push
