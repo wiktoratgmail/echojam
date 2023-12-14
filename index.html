@@ -318,13 +318,15 @@ function applySearch() {
             fetchData('all'); // Wartość domyślna to 'all'
         };
 
-function copyToClipboard(text) {
+ function copyToClipboard(text) {
             const dummyElement = document.createElement('textarea');
             dummyElement.value = text;
             document.body.appendChild(dummyElement);
             dummyElement.select();
             document.execCommand('copy');
             document.body.removeChild(dummyElement);
+
+            alert('Skopiowano do schowka!');
         }
         
     </script>
