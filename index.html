@@ -40,6 +40,16 @@
             margin-inline-start: 0px;
             margin-inline-end: 0px;
         }
+
+         .copy-icon {
+            display: none;
+            cursor: pointer;
+        }
+
+        .tile:hover .copy-icon {
+            display: inline-block;
+        }
+        
     </style>
 </head>
 
@@ -188,6 +198,8 @@
             });
         }
 
+            
+        
         // Funkcja do tworzenia kafli na podstawie danych z wiersza
         function createTile(item) {
             const wytwornia = item.wytwornia;
@@ -204,6 +216,19 @@
             tile.classList.add('tile');
             tile.style.backgroundColor = kafelColor;
 
+            
+            // dodanie ikony i mozliwosci kopiowania
+            
+            const artistElement = document.createElement('p');
+            artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">📋</span>`;
+            tile.appendChild(artistElement);
+
+            const albumElement = document.createElement('p');
+            albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">📋</span>`;
+            tile.appendChild(albumElement);
+
+
+            
             tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
 
  
@@ -291,6 +316,16 @@ function applySearch() {
             document.title = "Moja kolekcja kaset ECHO/JAM";
             fetchData('all'); // Wartość domyślna to 'all'
         };
+
+function copyToClipboard(text) {
+            const dummyElement = document.createElement('textarea');
+            dummyElement.value = text;
+            document.body.appendChild(dummyElement);
+            dummyElement.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummyElement);
+        }
+        
     </script>
 </body>
 </html>
