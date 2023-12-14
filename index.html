@@ -44,10 +44,11 @@
          .copy-icon {
             display: inline-block;
             cursor: pointer;
+           font-size: 8em;
         }
 
         .tile:hover .copy-icon {
-            text-transform: underline;
+            text-decoration: underline;
         }
         
     </style>
@@ -220,10 +221,10 @@
             // dodanie ikony i mozliwosci kopiowania
             
             const artistElement = document.createElement('p');
-            artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">(kopiuj)</span>`;
+            artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">(kopiuj do schowka)</span>`;
 
             const albumElement = document.createElement('p');
-            albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">(kopiuj)</span>`;
+            albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">(kopiuj do schowka)</span>`;
            
 
 
