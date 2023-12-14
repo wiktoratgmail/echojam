@@ -221,11 +221,10 @@
             
             const artistElement = document.createElement('p');
             artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">📋</span>`;
-            tile.appendChild(artistElement);
 
             const albumElement = document.createElement('p');
             albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">📋</span>`;
-            tile.appendChild(albumElement);
+           
 
 
             
@@ -283,10 +282,14 @@
          
 
             tile.appendChild(thumbnailContainer);
+
+            tile.appendChild(artistElement);
+            tile.appendChild(albumElement);
+
             tile.innerHTML += `
                
-                <p><strong>${artysta}</strong></p>
-                <p>${album}</p>
+                // <p><strong>${artysta}</strong></p>
+                // <p>${album}</p>
                 <p>Ilość: <strong>${ilosc}</strong></p>
                  <p>${wytwornia} - ${nr}</p>
             `;
