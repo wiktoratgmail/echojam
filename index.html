@@ -72,264 +72,170 @@
     <div id="tiles-container"></div>
 
     <script>
-        // Adres URL publicznego arkusza
-        const sheetUrl = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/pubhtml';
+        const sheetUrlCSV = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/export?format=csv';
 
-     // Funkcja do pobierania danych z arkusza
-    async function fetchData(filter, searchQuery) {
-        try {
-            const cachedData = cache.get('sheetData');
-            if (cachedData) {
-                renderTiles(JSON.parse(cachedData), filter, searchQuery);
-                return;
-            }
+// Prosty parser CSV - działający dla prostych plików CSV bez zagnieżdżonych przecinków w polach
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  return lines.map(line => line.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
+}
 
-            const response = await fetch(sheetUrl);
-            const data = await response.text();
+async function fetchData(filter, searchQuery) {
+  try {
+    // Możesz dodać cache w localStorage, tu jest przykład bez cache
+    const response = await fetch(sheetUrlCSV);
+    if (!response.ok) throw new Error('Nie udało się pobrać danych z arkusza');
 
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(data, 'text/html');
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
 
-            const table = doc.querySelector('table');
-            const rows = Array.from(table.querySelectorAll('tbody tr')).slice(1);
+    // Kolumny według arkusza: z nagłówków możesz dopasować indeksy
+    // Załóżmy, że nagłówki są w pierwszej linii
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
 
-            const tilesContainer = document.getElementById('tiles-container');
+    // Indeksy na podstawie Twojego pliku
+    const idxWytwornia = 0;
+    const idxNr = 2;
+    const idxArtysta = 3;
+    const idxAlbum = 4;
+    const idxIlosc = 6;
+    const idxKolor = 9;
+    const idxMiniatura = 10;
 
-            const rowData = rows.map((row, index) => {
-                const columns = row.querySelectorAll('td');
-                const nr = columns[2].textContent.trim();
+    const rowData = dataRows.map(cols => ({
+      wytwornia: cols[idxWytwornia] || '',
+      nr: cols[idxNr] || '',
+      artysta: cols[idxArtysta] || '',
+      album: cols[idxAlbum] || '',
+      ilosc: parseInt(cols[idxIlosc]) || 0,
+      kolor: cols[idxKolor] || '',
+      miniatura: cols[idxMiniatura] || '',
+    })).filter(item => item.nr !== '');
 
-                if (!nr) {
-                    return null;
-                }
+    renderTiles(rowData, filter, searchQuery);
 
-                return {
-                    wytwornia: columns[0].textContent.trim(),
-                    nr,
-                    artysta: columns[3].textContent.trim(),
-                    album: columns[4].textContent.trim(),
-                    ilosc: parseInt(columns[6].textContent.trim()),
-                    kolor: columns[9].textContent.trim(),
-                    miniatura: columns[10].textContent.trim(),
-                };
-            }).filter(item => item !== null);
+  } catch (error) {
+    console.error('Błąd pobierania danych:', error);
+    const tilesContainer = document.getElementById('tiles-container');
+    tilesContainer.innerHTML = '<p style="color:red;">Błąd pobierania danych z arkusza. Sprawdź konsolę.</p>';
+  }
+}
 
-            // Renderuj kafle na podstawie przefiltrowanych danych
-            renderTiles(rowData, filter, searchQuery);
+function renderTiles(data, filter, searchQuery) {
+  const tilesContainer = document.getElementById('tiles-container');
+  // Czyść istniejące kafle
+  tilesContainer.innerHTML = '';
 
-            // Zapisz dane do pamięci podręcznej
-            cache.set('sheetData', JSON.stringify(rowData));
+  const searchLower = searchQuery.toLowerCase();
 
-        } catch (error) {
-            console.error('Błąd pobierania danych:', error);
-        }
+  const filteredData = data.filter(item => {
+    const ilosc = item.ilosc;
+    const artistLowerCase = item.artysta.toLowerCase();
+    const albumLowerCase = item.album.toLowerCase();
+    const wytworniaLowerCase = item.wytwornia.toLowerCase();
 
-        // Funkcja do renderowania kafli na podstawie danych z arkusza
-        function renderTiles(data, filter, searchQuery) {
-            const tilesContainer = document.getElementById('tiles-container');
+    const filterCondition =
+      filter === 'all' ||
+      (filter === 'owned' && ilosc > 0) ||
+      (filter === 'wanted' && ilosc < 1) ||
+      (filter === 'duble' && ilosc > 1);
 
-            // Czyść istniejące kafle przed renderowaniem nowych
-            while (tilesContainer.firstChild) {
-                tilesContainer.removeChild(tilesContainer.firstChild);
-            }
+    const searchCondition =
+      searchQuery === '' ||
+      artistLowerCase.includes(searchLower) ||
+      albumLowerCase.includes(searchLower) ||
+      wytworniaLowerCase.includes(searchLower);
 
-            // Filtruj dane na podstawie wybranego filtra i wyszukiwania
-            const filteredData = data.filter(item => {
-                const ilosc = parseInt(item.ilosc);
-                const artistLowerCase = item.artysta.toLowerCase();
-                const albumLowerCase = item.album.toLowerCase();
-                const wytworniaLowerCase = item.wytwornia.toLowerCase();
+    return filterCondition && searchCondition;
+  });
 
-                const filterCondition = filter === 'all' ||
-                    (filter === 'owned' && ilosc > 0) ||
-                    (filter === 'wanted' && ilosc < 1)
-                    ||
-                    (filter === 'duble' && ilosc > 1);
+  filteredData.forEach(item => {
+    const tile = createTile(item);
+    tilesContainer.appendChild(tile);
+  });
+}
 
-                const searchCondition = searchQuery === '' ||
-                    artistLowerCase.includes(searchQuery) ||
-                    albumLowerCase.includes(searchQuery) ||
-                    wytworniaLowerCase.includes(searchQuery);
+function createTile(item) {
+  const { wytwornia, nr, artysta, album, ilosc, kolor, miniatura } = item;
 
-                return filterCondition && searchCondition;
-            });
+  const tile = document.createElement('div');
+  tile.classList.add('tile');
 
-            // Renderuj kafle na podstawie przefiltrowanych danych
-            filteredData.forEach(item => {
-                const tile = createTile(item);
-                tilesContainer.appendChild(tile);
-            });
-        }
-    }
-        
+  const kafelColor = kolor ? kolor.toLowerCase() : '#555555';
+  tile.style.backgroundColor = kafelColor;
 
-        // Funkcja do renderowania kafli na podstawie danych z arkusza
-        function renderTiles(data, filter) {
-            const tilesContainer = document.getElementById('tiles-container');
+  tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
+  tile.style.width = '280px';
+  tile.style.height = '450px';
+  tile.style.fontFamily = 'sans-serif';
+  tile.style.border = ilosc === 0 ? '5px solid red' : '5px solid #ddd';
 
-            // Czyść istniejące kafle przed renderowaniem nowych
-            while (tilesContainer.firstChild) {
-                tilesContainer.removeChild(tilesContainer.firstChild);
-            }
+  const thumbnailContainer = document.createElement('div');
+  thumbnailContainer.classList.add('thumbnail-container');
+  thumbnailContainer.style.width = '100%';
+  thumbnailContainer.style.height = '280px';
 
-           // Filtruj dane na podstawie wybranego filtra i wyszukiwania
-            const filteredData = data.filter(item => {
-                const ilosc = parseInt(item.ilosc);
-                const artistLowerCase = item.artysta.toLowerCase();
-                const albumLowerCase = item.album.toLowerCase();
-                const wytworniaLowerCase = item.wytwornia.toLowerCase();
+  const thumbnailImage = document.createElement('div');
+  thumbnailImage.classList.add('thumbnail-image');
 
-                const filterCondition = filter === 'all' ||
-                    (filter === 'owned' && ilosc > 0) ||
-                    (filter === 'wanted' && ilosc < 1)||
-                  (filter === 'duble' && ilosc > 1);
+  if (miniatura && miniatura !== '') {
+    const imageElement = document.createElement('img');
+    imageElement.src = miniatura;
+    thumbnailImage.appendChild(imageElement);
+    thumbnailContainer.appendChild(thumbnailImage);
+  } else if (kafelColor === '#000000') {
+    thumbnailContainer.style.background = '#000000';
+  } else {
+    thumbnailImage.innerHTML = `<p><strong>?</strong></p>`;
+    thumbnailContainer.appendChild(thumbnailImage);
+  }
 
-                const searchCondition = searchQuery === '' ||
-                    artistLowerCase.includes(searchQuery) ||
-                    albumLowerCase.includes(searchQuery) ||
-                    wytworniaLowerCase.includes(searchQuery);
+  tile.appendChild(thumbnailContainer);
 
-                return filterCondition && searchCondition;
-            });
+  const artistElement = document.createElement('p');
+  artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">(kopiuj do schowka)</span>`;
+  tile.appendChild(artistElement);
 
-            // Renderuj kafle na podstawie przefiltrowanych danych
-            filteredData.forEach(item => {
-                const tile = createTile(item);
-                tilesContainer.appendChild(tile);
-            });
-        }
+  const albumElement = document.createElement('p');
+  albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">(kopiuj do schowka)</span>`;
+  tile.appendChild(albumElement);
 
-            
-        
-        // Funkcja do tworzenia kafli na podstawie danych z wiersza
-        function createTile(item) {
-            const wytwornia = item.wytwornia;
-            const nr = item.nr;
-            const artysta = item.artysta;
-            const album = item.album;
-            const ilosc = parseInt(item.ilosc);
-            const kolor = item.kolor;
-            const miniatura = item.miniatura;
+  tile.innerHTML += `
+    <p>Ilość: <strong>${ilosc}</strong></p>
+    <p>${wytwornia} - ${nr}</p>
+  `;
 
-            const kafelColor = kolor ? kolor.toLowerCase() : ''; // Sprawdź, czy kolor nie jest undefined/null
+  return tile;
+}
 
-            const tile = document.createElement('div');
-            tile.classList.add('tile');
-            tile.style.backgroundColor = kafelColor;
-
-            
-            // dodanie ikony i mozliwosci kopiowania
-            
-            const artistElement = document.createElement('p');
-            artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">(kopiuj do schowka)</span>`;
-
-            const albumElement = document.createElement('p');
-            albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">(kopiuj do schowka)</span>`;
-           
-
-
-            
-            tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
-
- 
-
-            tile.style.width = '280px';
-            tile.style.height = '450px';
-
-             // Dodaj warunek na ilość
-                if (ilosc === 0) {
-                    tile.style.border = '5px solid red';
-                }
-
-            tile.style.fontFamily = 'sans-serif';
-
-            const thumbnailContainer = document.createElement('div');
-            thumbnailContainer.classList.add('thumbnail-container');
-            thumbnailContainer.style.width = '100%';
-            thumbnailContainer.style.height = '280px';
-
-            
-            const thumbnailImage = document.createElement('div');
-            thumbnailImage.classList.add('thumbnail-image');
-             
-            // Utwórz element obrazu
-
-             if (miniatura != '' ) {
-                       const imageElement = document.createElement('img');
-            imageElement.src = miniatura;
-            // imageElement.alt = '?'; // Dodaj tekst alternatywny dla obrazu (opcjonalne)
-            
-            // Dodaj obraz miniatury do elementu miniatury
-            thumbnailImage.appendChild(imageElement);
-            
-            // Dodaj element miniatury do kontenera
-            thumbnailContainer.appendChild(thumbnailImage);
-                }
-            else if (kolor == "#000000")
-            {
-                thumbnailContainer.style.background = '#000000';
-            }    
-            
-            else 
-             {
-                  thumbnailImage.innerHTML += `
-               
-                <p><strong>?</strong></p>
-                
-            `;
-
-            thumbnailContainer.appendChild(thumbnailImage);
-             }
-         
-
-            tile.appendChild(thumbnailContainer);
-
-            tile.appendChild(artistElement);
-            tile.appendChild(albumElement);
-
-            tile.innerHTML += `
-                          
-                <p>Ilość: <strong>${ilosc}</strong></p>
-                 <p>${wytwornia} - ${nr}</p>
-            `;
-
-            return tile;
-        }
-
-       // Funkcja do zastosowania filtru
 function applyFilter() {
-    const filter = document.getElementById('filter').value;
-    const searchQuery = document.getElementById('search').value.toLowerCase();
-    fetchData(filter, searchQuery);
+  const filter = document.getElementById('filter').value;
+  const searchQuery = document.getElementById('search').value.toLowerCase();
+  fetchData(filter, searchQuery);
 }
 
-// Funkcja do aktualizacji wyników wyszukiwania
 function applySearch() {
-    const filter = document.getElementById('filter').value;
-    const searchQuery = document.getElementById('search').value.toLowerCase();
-    fetchData(filter, searchQuery);
+  const filter = document.getElementById('filter').value;
+  const searchQuery = document.getElementById('search').value.toLowerCase();
+  fetchData(filter, searchQuery);
 }
-        // Funkcja buforująca do przechowywania danych w pamięci podręcznej
-        const cache = new Map();
 
-        // Pobierz dane po załadowaniu strony
-        window.onload = function () {
-            // Zmiana tytułu strony
-            document.title = "Moja kolekcja kaset ECHO/JAM";
-            fetchData('all'); // Wartość domyślna to 'all'
-        };
+function copyToClipboard(text) {
+  const dummyElement = document.createElement('textarea');
+  dummyElement.value = text;
+  document.body.appendChild(dummyElement);
+  dummyElement.select();
+  document.execCommand('copy');
+  document.body.removeChild(dummyElement);
+  alert('Skopiowano do schowka!');
+}
 
- function copyToClipboard(text) {
-            const dummyElement = document.createElement('textarea');
-            dummyElement.value = text;
-            document.body.appendChild(dummyElement);
-            dummyElement.select();
-            document.execCommand('copy');
-            document.body.removeChild(dummyElement);
+window.onload = function () {
+  document.title = "Moja kolekcja kaset ECHO/JAM";
+  fetchData('all', ''); // Domyślnie bez filtra i bez szukania
+};
 
-            alert('Skopiowano do schowka!');
-        }
-        
     </script>
 </body>
 </html>
