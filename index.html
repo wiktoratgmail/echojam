@@ -164,13 +164,13 @@ function createTile(item) {
 
   const kafelColor = kolor ? kolor.toLowerCase() : '#555555';
   tile.style.backgroundColor = kafelColor;
-
   tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
   tile.style.width = '280px';
   tile.style.height = '450px';
   tile.style.fontFamily = 'sans-serif';
   tile.style.border = ilosc === 0 ? '5px solid red' : '5px solid #ddd';
 
+  // miniatura
   const thumbnailContainer = document.createElement('div');
   thumbnailContainer.classList.add('thumbnail-container');
   thumbnailContainer.style.width = '100%';
@@ -182,6 +182,7 @@ function createTile(item) {
   if (miniatura && miniatura !== '') {
     const imageElement = document.createElement('img');
     imageElement.src = miniatura;
+    imageElement.loading = "lazy"; // lazy loading
     thumbnailImage.appendChild(imageElement);
     thumbnailContainer.appendChild(thumbnailImage);
   } else if (kafelColor === '#000000') {
@@ -193,29 +194,33 @@ function createTile(item) {
 
   tile.appendChild(thumbnailContainer);
 
+  // artysta
   const artistElement = document.createElement('p');
-  artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">(kopiuj do schowka)</span>`;
+  artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">(kopiuj)</span>`;
   tile.appendChild(artistElement);
 
+  // album
   const albumElement = document.createElement('p');
-  albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">(kopiuj do schowka)</span>`;
+  albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">(kopiuj)</span>`;
   tile.appendChild(albumElement);
 
-  tile.innerHTML += `
-    <p>Ilość: <strong>${ilosc}</strong></p>
-    <p>${wytwornia} - ${nr}</p>
-  `;
+  // ilość > 0 → pokazujemy ilość
+  if (ilosc > 0) {
+    tile.innerHTML += `<p>Ilość: <strong>${ilosc}</strong></p>`;
+  } else {
+    // ilość == 0 → pokazujemy linki do portali
+    const query = encodeURIComponent(`${artysta} ${album}`);
+    const linksElement = document.createElement('p');
+    linksElement.innerHTML = `
+      <a href="https://allegro.pl/listing?string=${query}&nosnik=Kaseta" target="_blank">Allegro</a> | 
+      <a href="https://www.olx.pl/muzyka-edukacja/muzyka/kasety-audio/q-${query}/" target="_blank">OLX</a> |    
+      <a href="https://www.vinted.pl/catalog?search_text=${query}&catalog[]=3038&page=1" target="_blank">Vinted</a>
+    `;
+    tile.appendChild(linksElement);
+  }
 
-const query = encodeURIComponent(`${artysta} ${album}`);
-
-const linksElement = document.createElement('p');
-linksElement.innerHTML = `
-  <a href="https://allegro.pl/listing?string=${query}&nosnik=Kaseta" target="_blank">Allegro</a> | 
-  <a href="https://www.olx.pl/muzyka-edukacja/muzyka/kasety-audio/q-${query}/" target="_blank">OLX</a> |    
-  <a href="https://www.vinted.pl/catalog?search_text=${query}&catalog[]=3038&page=1" target="_blank">Vinted</a>
-`;
-tile.appendChild(linksElement);
- 
+  // zawsze dodajemy wytwórnię i numer katalogowy
+  tile.innerHTML += `<p>${wytwornia} - ${nr}</p>`;
 
   return tile;
 }
