@@ -210,7 +210,7 @@ const query = encodeURIComponent(`${artysta} ${album}`);
 
 const linksElement = document.createElement('p');
 linksElement.innerHTML = `
-  <a href="https://allegro.pl/listing?string=${query}" target="_blank">Allegro</a> | 
+  <a href="https://allegro.pl/listing?string=${query}&nosnik=Kaseta" target="_blank">Allegro</a> | 
   <a href="https://www.olx.pl/d/oferty/q-${query}/" target="_blank">OLX</a> | 
   <a href="https://www.vinted.pl/items?search_text=${query}" target="_blank">Vinted</a>
 `;
