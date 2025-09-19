@@ -1,259 +1,270 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Moja kolekcja kaset ECHOJAM</title>
 <link rel="icon" href="favicon/favicon.ico" type="image/x-icon" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moja kolekcja kaset ECHO/JAM</title>
 <style>
+  /* Kafle */
   .tile {
     border: 5px solid #ddd;
     padding: 8px;
     margin: 8px;
     width: 288px;
     float: left;
-    font-family: sans-serif;
+    text-align: center;
+    text-transform: uppercase;
   }
-
-  .tile img {
-    max-width: 100%;
-    height: auto;
-  }
+  .tile img { max-width: 100%; height: auto; }
 
   .thumbnail-container {
-    width: 100%;
-    height: 280px;
-    background: white;
-    color: grey;
-    font-size: 12em;
+    width: 100%; height: 280px; background: white; color: grey; font-size: 12em;
   }
+  .thumbnail-container p { margin: 0; }
 
-  .thumbnail-container p {
-    display: block;
-    margin-block-start: 0em;
-    margin-block-end: 0em;
-    margin-inline-start: 0px;
-    margin-inline-end: 0px;
+  .copy-icon { display: inline-block; cursor: pointer; font-size: 8px; }
+  .tile:hover .copy-icon { text-decoration: underline; }
+
+  /* Pasek narzędzi */
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }
+  .toolbar .group { display: flex; align-items: center; gap: 8px; }
 
-  .copy-icon {
-    display: inline-block;
-    cursor: pointer;
-    font-size: 8px;
+  /* Zakładki oparte o radiobuttony */
+  .tabs {
+    display: flex; gap: 4px; align-items: flex-end;
   }
+  .tabs input[type="radio"] { display: none; }
 
-  .tile:hover .copy-icon {
-    text-decoration: underline;
-  }
-
-  .filter-label {
-    font-weight: bold;
-    margin-bottom: 4px;
-    font-family: sans-serif;
-  }
-
-  .radio-tab-group,
-  .checkbox-group {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 12px;
-  }
-
-  input[type="radio"],
-  input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .radio-tab-group label,
-  .checkbox-group label {
-    cursor: pointer;
-    padding: 8px 20px;
+  .tab-label {
+    padding: 8px 14px;
     border: 1px solid #ccc;
-    border-radius: 4px 4px 0 0;
-    background-color: #f0f0f0;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    background: #f2f2f2;
+    cursor: pointer;
+    font-weight: 600;
     user-select: none;
-    transition: background-color 0.3s, border-color 0.3s;
-    font-weight: normal;
-    color: #333;
-    outline-offset: 2px;
-    outline: none;
-    flex-shrink: 0;
   }
-
-  .radio-tab-group label:focus,
-  .checkbox-group label:focus {
-    outline: 2px solid #0078d7;
-  }
-
-  .radio-tab-group label:not(:last-child) {
-    border-right: none;
-  }
-
-  input[type="radio"]:checked + label {
-    background-color: white;
-    border-color: #0078d7 #0078d7 white #0078d7;
-    font-weight: bold;
-    color: #0078d7;
+  /* aktywna zakładka */
+  .tabs input[type="radio"]:checked + label {
+    background: #fff;
+    border-color: #aaa;
     position: relative;
     top: 1px;
-    z-index: 1;
   }
 
-  input[type="checkbox"]:checked + label {
-    background-color: white;
-    border-color: #0078d7;
-    font-weight: bold;
-    color: #0078d7;
-    position: relative;
-    z-index: 1;
-    border-radius: 4px;
+  /* Pasek pod zakładkami (linia) */
+  .tabs-underline {
+    width: 100%;
+    height: 1px;
+    background: #aaa;
+    margin-top: -1px;
+    margin-bottom: 8px;
   }
 
-  #tiles-container::after {
-    content: "";
-    display: table;
-    clear: both;
-  }
+  /* Checkboxy FF */
+  .ff-filters label { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; }
+  .ff-filters input { transform: scale(1.1); }
+
+  /* Pole wyszukiwania */
+  #search { padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; min-width: 220px; }
+
+  /* Kontener kafli */
+  #tiles-container::after { content: ""; display: block; clear: both; }
 </style>
 </head>
 <body>
 
-<h1>Moja kolekcja kaset ECHOJAM</h1>
+  <div class="toolbar">
+    <!-- Zakładki (radiobuttony) zamiast selecta: WSZYSTKO / MAM / SZUKAM / DUBLE -->
+    <div class="group" style="flex: 1 1 380px; min-width: 320px;">
+      <div class="tabs" id="stock-tabs">
+        <input type="radio" name="tab" id="tab-all" value="all" checked>
+        <label class="tab-label" for="tab-all">WSZYSTKO</label>
 
-<div class="filter-label" id="label-filter">Filtr wykonawcy</div>
-<div class="radio-tab-group" role="radiogroup" aria-labelledby="label-filter">
-  <input type="radio" id="filter-all" name="filter" value="all" checked />
-  <label for="filter-all" tabindex="0">WSZYSTKO</label>
+        <input type="radio" name="tab" id="tab-owned" value="owned">
+        <label class="tab-label" for="tab-owned">MAM</label>
 
-  <input type="radio" id="filter-owned" name="filter" value="owned" />
-  <label for="filter-owned" tabindex="0">MAM</label>
+        <input type="radio" name="tab" id="tab-wanted" value="wanted">
+        <label class="tab-label" for="tab-wanted">SZUKAM</label>
 
-  <input type="radio" id="filter-wanted" name="filter" value="wanted" />
-  <label for="filter-wanted" tabindex="0">SZUKAM</label>
+        <input type="radio" name="tab" id="tab-duble" value="duble">
+        <label class="tab-label" for="tab-duble">DUBLE</label>
+      </div>
+    </div>
 
-  <input type="radio" id="filter-duble" name="filter" value="duble" />
-  <label for="filter-duble" tabindex="0">DUBLE</label>
-</div>
+    <div class="tabs-underline"></div>
 
-<div class="filter-label" id="label-ff" style="margin-top: 16px;">Wybierz FF</div>
-<div class="checkbox-group" role="group" aria-labelledby="label-ff">
-  <input type="checkbox" id="ff-echo" name="ff" value="echo" checked />
-  <label for="ff-echo" tabindex="0">ECHO</label>
+    <!-- Checkboxy FF (ECHO / JAM) -->
+    <div class="group ff-filters">
+      <strong>FF:</strong>
+      <label><input type="checkbox" id="ff-echo" checked> ECHO</label>
+      <label><input type="checkbox" id="ff-jam" checked> JAM</label>
+    </div>
 
-  <input type="checkbox" id="ff-jam" name="ff" value="jam" checked />
-  <label for="ff-jam" tabindex="0">JAM</label>
-</div>
+    <!-- Wyszukiwarka -->
+    <div class="group">
+      <label for="search"><strong>Wyszukaj:</strong></label>
+      <input type="text" id="search" placeholder="artysta / album / FF">
+    </div>
+  </div>
 
-<label for="search">Wyszukaj:</label>
-<input type="text" id="search" style="padding: 6px; width: 100%; max-width: 300px;" />
-
-<div id="tiles-container"></div>
+  <div id="tiles-container"></div>
 
 <script>
   const sheetUrlCSV = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/export?format=csv';
 
+  // Prosty parser CSV (bez obsługi zagnieżdżonych przecinków w cudzysłowie)
   function parseCSV(text) {
     const lines = text.trim().split('\n');
-    return lines.map(line => line.split(',').map(cell => cell.trim()));
+    return lines.map(line => line.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
   }
 
-  async function fetchData(filter, searchQuery, selectedFFs) {
+  let cachedRows = null; // proste cache w pamięci strony
+
+  async function fetchData() {
+    if (cachedRows) return cachedRows;
+    const response = await fetch(sheetUrlCSV);
+    if (!response.ok) throw new Error('Nie udało się pobrać danych z arkusza');
+
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+    cachedRows = rows;
+    return rows;
+  }
+
+  function getActiveStockFilter() {
+    const checked = document.querySelector('#stock-tabs input[type="radio"]:checked');
+    return checked ? checked.value : 'all';
+  }
+
+  function getActiveFFFilters() {
+    const echo = document.getElementById('ff-echo').checked;
+    const jam  = document.getElementById('ff-jam').checked;
+    const selected = [];
+    if (echo) selected.push('echo');
+    if (jam)  selected.push('jam');
+    return selected; // może być pusta tablica => nic nie pokaże
+  }
+
+  async function applyFiltersAndRender() {
     try {
-      const response = await fetch(sheetUrlCSV);
-      if (!response.ok) throw new Error('Nie udało się pobrać danych z arkusza');
-      const csvText = await response.text();
-      const rows = parseCSV(csvText);
+      const rows = await fetchData();
 
       const headers = rows[0];
       const dataRows = rows.slice(1);
 
-      const idxWytwornia = 0;
-      const idxNr = 2;
-      const idxArtysta = 3;
-      const idxAlbum = 4;
-      const idxIlosc = 6;
-      const idxKolor = 9;
+      // Indeksy kolumn dopasowane do Twojego arkusza
+      const idxFF        = 0;  // kolumna FF: ECHO / JAM
+      const idxNr        = 2;
+      const idxArtysta   = 3;
+      const idxAlbum     = 4;
+      const idxIlosc     = 6;
+      const idxKolor     = 9;
       const idxMiniatura = 10;
 
       const rowData = dataRows.map(cols => ({
-        wytwornia: cols[idxWytwornia],
-        nr: cols[idxNr],
-        artysta: cols[idxArtysta],
-        album: cols[idxAlbum],
+        ff: (cols[idxFF] || '').trim(),             // ECHO / JAM
+        nr: cols[idxNr] || '',
+        artysta: cols[idxArtysta] || '',
+        album: cols[idxAlbum] || '',
         ilosc: parseInt(cols[idxIlosc]) || 0,
-        kolor: cols[idxKolor],
-        miniatura: cols[idxMiniatura] || '',
-        ff: cols[idxWytwornia].toLowerCase().includes('echo') ? 'echo' : (cols[idxWytwornia].toLowerCase().includes('jam') ? 'jam' : '')
-      }));
+        kolor: cols[idxKolor] || '',
+        miniatura: cols[idxMiniatura] || ''
+      })).filter(item => item.nr !== '');
 
-      renderTiles(rowData, filter, searchQuery, selectedFFs);
+      const stockFilter = getActiveStockFilter();           // all | owned | wanted | duble
+      const ffSelected  = getActiveFFFilters();             // ['echo','jam'] / ['echo'] / ['jam'] / []
+      const q           = (document.getElementById('search').value || '').toLowerCase();
+
+      renderTiles(rowData, { stockFilter, ffSelected, q });
+
     } catch (error) {
       console.error('Błąd pobierania danych:', error);
       const tilesContainer = document.getElementById('tiles-container');
-      tilesContainer.innerHTML = '<p style="color:red">Błąd pobierania danych z arkusza. Sprawdź konsolę.</p>';
+      tilesContainer.innerHTML = '<p style="color:red;">Błąd pobierania danych z arkusza. Sprawdź konsolę.</p>';
     }
   }
 
-  function renderTiles(data, filter, searchQuery, selectedFFs) {
+  function renderTiles(data, { stockFilter, ffSelected, q }) {
     const tilesContainer = document.getElementById('tiles-container');
     tilesContainer.innerHTML = '';
 
-    const searchLower = searchQuery.toLowerCase();
+    const filtered = data.filter(item => {
+      const ilosc = item.ilosc;
 
-    const filteredData = data.filter(item => {
-      let filterCondition = false;
-      switch (filter) {
-        case 'all': filterCondition = true; break;
-        case 'owned': filterCondition = item.ilosc > 0; break;
-        case 'wanted': filterCondition = item.ilosc === 0; break;
-        case 'duble': filterCondition = item.ilosc === 1; break;
-        default: filterCondition = false;
-      }
-      const ffCondition = selectedFFs.length === 0 ? true : selectedFFs.includes(item.ff);
-      const textToSearch = (item.artysta + ' ' + item.album + ' ' + item.wytwornia).toLowerCase();
-      const searchCondition = textToSearch.includes(searchLower);
-      return filterCondition && ffCondition && searchCondition;
+      // Filtr zakładką (stan posiadania)
+      const stockOK =
+        stockFilter === 'all' ||
+        (stockFilter === 'owned'  && ilosc > 0) ||
+        (stockFilter === 'wanted' && ilosc < 1) ||
+        (stockFilter === 'duble'  && ilosc > 1);
+
+      // Filtr FF (checkboxy)
+      const ffLower = (item.ff || '').toLowerCase();
+      const ffOK = ffSelected.length === 0 ? false : ffSelected.includes(ffLower); // brak zaznaczeń => nic nie pokazuj
+
+      // Szukajka: artysta / album / FF
+      const searchOK =
+        q === '' ||
+        (item.artysta || '').toLowerCase().includes(q) ||
+        (item.album   || '').toLowerCase().includes(q) ||
+        ffLower.includes(q);
+
+      return stockOK && ffOK && searchOK;
     });
 
-    if (filteredData.length === 0) {
-      tilesContainer.innerHTML = '<p>Brak wyników spełniających kryteria.</p>';
-      return;
+    filtered.forEach(item => tilesContainer.appendChild(createTile(item)));
+  }
+
+  function createTile(item) {
+    const { ff, nr, artysta, album, ilosc, kolor, miniatura } = item;
+
+    const tile = document.createElement('div');
+    tile.classList.add('tile');
+
+    const kafelColor = kolor ? kolor.toLowerCase() : '#555555';
+    tile.style.backgroundColor = kafelColor;
+    tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
+    tile.style.width = '280px';
+    tile.style.height = '450px';
+    tile.style.fontFamily = 'sans-serif';
+    tile.style.border = ilosc === 0 ? '5px solid red' : '5px solid #ddd';
+
+    // miniatura
+    const thumbnailContainer = document.createElement('div');
+    thumbnailContainer.classList.add('thumbnail-container');
+    thumbnailContainer.style.width = '100%';
+    thumbnailContainer.style.height = '280px';
+
+    const thumbnailImage = document.createElement('div');
+    thumbnailImage.classList.add('thumbnail-image');
+
+    if (miniatura && miniatura !== '') {
+      const imageElement = document.createElement('img');
+      imageElement.src = miniatura;
+      imageElement.loading = "lazy";
+      thumbnailImage.appendChild(imageElement);
+      thumbnailContainer.appendChild(thumbnailImage);
+    } else if (kafelColor === '#000000') {
+      thumbnailContainer.style.background = '#000000';
+    } else {
+      thumbnailImage.innerHTML = `<p><strong>?</strong></p>`;
+      thumbnailContainer.appendChild(thumbnailImage);
     }
 
-    filteredData.forEach(item => {
-      const tile = document.createElement('div');
-      tile.classList.add('tile');
-      tile.style.backgroundColor = item.kolor ? item.kolor.toLowerCase() : '#555555';
-      tile.style.color = (item.kolor && item.kolor.toLowerCase() === '#000000') ? 'gold' : 'white';
-      tile.style.width = '280px';
-      tile.style.height = '450px';
-      tile.style.border = item.ilosc === 0 ? '5px solid red' : '5px solid #ddd';
+    tile.appendChild(thumbnailContainer);
 
-      const thumbnailContainer = document.createElement('div');
-      thumbnailContainer.classList.add('thumbnail-container');
-      thumbnailContainer.style.width = '100%';
-      thumbnailContainer.style.height = '280px';
+    // artysta
+    const artistElement = document.createElement('p');
+    artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta.replace(/'/g,"\\'")}')">(kopiuj)</span>`;
+    tile.appendChild(artistElement);
 
-      if (item.miniatura) {
-        const imageElement = document.createElement('img');
-        imageElement.src = item.miniatura;
-        imageElement.loading = 'lazy';
-        imageElement.style.maxWidth = '100%';
-        imageElement.style.height = 'auto';
-        thumbnailContainer.appendChild(imageElement);
-      } else {
-        thumbnailContainer.style.background = '#000000';
-      }
-
-      tile.appendChild(thumbnailContainer);
-
-      const artistElement = document.createElement('p');
-      artistElement.innerHTML = `<strong>Artysta:</strong> ${item.artysta}`;
-      tile.appendChild(artistElement);
-
-      const albumElement = document.createElement('p');
-      albumElement.innerHTML = `Album: ${item.album}`;
-      tile.appendChild(albumElement
+    // album
+    const albumElement = document.createElement('p');
+    albumElement.innerHTML = `${album} <span class="copy-icon" onclick="
