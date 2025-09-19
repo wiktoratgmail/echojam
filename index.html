@@ -6,7 +6,6 @@
 <title>Moja kolekcja kaset ECHOJAM</title>
 <link rel="icon" href="favicon/favicon.ico" type="image/x-icon" />
 <style>
-  /* Twoje style kafli itd. */
   .tile {
     border: 5px solid #ddd;
     padding: 8px;
@@ -20,9 +19,6 @@
     max-width: 100%;
     height: auto;
   }
-
-  .tile text-align: center;
-  text-transform: uppercase;
 
   .thumbnail-container {
     width: 100%;
@@ -49,8 +45,6 @@
   .tile:hover .copy-icon {
     text-decoration: underline;
   }
-
-  /* Style filtrów */
 
   .filter-label {
     font-weight: bold;
@@ -118,63 +112,54 @@
     border-radius: 4px;
   }
 
-  /* Reset float for container */
   #tiles-container::after {
     content: "";
     display: table;
     clear: both;
   }
-
 </style>
 </head>
 <body>
 
 <h1>Moja kolekcja kaset ECHOJAM</h1>
 
-<!-- Filtr wykonawcy jako radiobuttony -->
 <div class="filter-label" id="label-filter">Filtr wykonawcy</div>
 <div class="radio-tab-group" role="radiogroup" aria-labelledby="label-filter">
-  <input type="radio" id="filter-all" name="filter" value="all" checked onchange="applyFilter()" />
+  <input type="radio" id="filter-all" name="filter" value="all" checked />
   <label for="filter-all" tabindex="0">WSZYSTKO</label>
 
-  <input type="radio" id="filter-owned" name="filter" value="owned" onchange="applyFilter()" />
+  <input type="radio" id="filter-owned" name="filter" value="owned" />
   <label for="filter-owned" tabindex="0">MAM</label>
 
-  <input type="radio" id="filter-wanted" name="filter" value="wanted" onchange="applyFilter()" />
+  <input type="radio" id="filter-wanted" name="filter" value="wanted" />
   <label for="filter-wanted" tabindex="0">SZUKAM</label>
 
-  <input type="radio" id="filter-duble" name="filter" value="duble" onchange="applyFilter()" />
+  <input type="radio" id="filter-duble" name="filter" value="duble" />
   <label for="filter-duble" tabindex="0">DUBLE</label>
 </div>
 
-<!-- Filtr FF jako checkboxy -->
 <div class="filter-label" id="label-ff" style="margin-top: 16px;">Wybierz FF</div>
 <div class="checkbox-group" role="group" aria-labelledby="label-ff">
-  <input type="checkbox" id="ff-echo" name="ff" value="echo" checked onchange="applyFilter()" />
+  <input type="checkbox" id="ff-echo" name="ff" value="echo" checked />
   <label for="ff-echo" tabindex="0">ECHO</label>
 
-  <input type="checkbox" id="ff-jam" name="ff" value="jam" checked onchange="applyFilter()" />
+  <input type="checkbox" id="ff-jam" name="ff" value="jam" checked />
   <label for="ff-jam" tabindex="0">JAM</label>
 </div>
 
-<!-- Pole wyszukiwania -->
 <label for="search">Wyszukaj:</label>
-<input type="text" id="search" oninput="applyFilter()" style="padding: 6px; width: 100%; max-width: 300px;" />
+<input type="text" id="search" style="padding: 6px; width: 100%; max-width: 300px;" />
 
-<!-- Kontener kafli -->
 <div id="tiles-container"></div>
 
 <script>
-  // URL do Twojego arkusza google z konwersją na CSV
   const sheetUrlCSV = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/export?format=csv';
 
-  // Funkcja parsująca CSV - prosta wersja
   function parseCSV(text) {
     const lines = text.trim().split('\n');
     return lines.map(line => line.split(',').map(cell => cell.trim()));
   }
 
-  // Pobierz dane i zrenderuj kafle według filtra i wyszukiwania
   async function fetchData(filter, searchQuery, selectedFFs) {
     try {
       const response = await fetch(sheetUrlCSV);
@@ -185,7 +170,6 @@
       const headers = rows[0];
       const dataRows = rows.slice(1);
 
-      // Indeksy kolumn wg Twojego arkusza
       const idxWytwornia = 0;
       const idxNr = 2;
       const idxArtysta = 3;
@@ -202,7 +186,6 @@
         ilosc: parseInt(cols[idxIlosc]) || 0,
         kolor: cols[idxKolor],
         miniatura: cols[idxMiniatura] || '',
-        // Dla FF: łatwy warunek - jeśli wytwornia zawiera 'echo' lub 'jam' (można poprawić)
         ff: cols[idxWytwornia].toLowerCase().includes('echo') ? 'echo' : (cols[idxWytwornia].toLowerCase().includes('jam') ? 'jam' : '')
       }));
 
@@ -214,7 +197,6 @@
     }
   }
 
-  // Renderuj kafle z filtracją
   function renderTiles(data, filter, searchQuery, selectedFFs) {
     const tilesContainer = document.getElementById('tiles-container');
     tilesContainer.innerHTML = '';
@@ -222,7 +204,6 @@
     const searchLower = searchQuery.toLowerCase();
 
     const filteredData = data.filter(item => {
-      // Filtr wykonawcy wg statusu
       let filterCondition = false;
       switch (filter) {
         case 'all': filterCondition = true; break;
@@ -231,14 +212,9 @@
         case 'duble': filterCondition = item.ilosc === 1; break;
         default: filterCondition = false;
       }
-
-      // Filtr FF - dajemy true, jeśli item.ff jest jednym z zaznaczonych checkboxów
       const ffCondition = selectedFFs.length === 0 ? true : selectedFFs.includes(item.ff);
-
-      // Szukanie w artystach, albumie, wytwórni
       const textToSearch = (item.artysta + ' ' + item.album + ' ' + item.wytwornia).toLowerCase();
       const searchCondition = textToSearch.includes(searchLower);
-
       return filterCondition && ffCondition && searchCondition;
     });
 
@@ -250,15 +226,12 @@
     filteredData.forEach(item => {
       const tile = document.createElement('div');
       tile.classList.add('tile');
-
       tile.style.backgroundColor = item.kolor ? item.kolor.toLowerCase() : '#555555';
       tile.style.color = (item.kolor && item.kolor.toLowerCase() === '#000000') ? 'gold' : 'white';
       tile.style.width = '280px';
       tile.style.height = '450px';
-
       tile.style.border = item.ilosc === 0 ? '5px solid red' : '5px solid #ddd';
 
-      // Miniatura
       const thumbnailContainer = document.createElement('div');
       thumbnailContainer.classList.add('thumbnail-container');
       thumbnailContainer.style.width = '100%';
@@ -274,51 +247,13 @@
       } else {
         thumbnailContainer.style.background = '#000000';
       }
+
       tile.appendChild(thumbnailContainer);
 
-      // Artysta
       const artistElement = document.createElement('p');
       artistElement.innerHTML = `<strong>Artysta:</strong> ${item.artysta}`;
       tile.appendChild(artistElement);
 
-      // Album
       const albumElement = document.createElement('p');
       albumElement.innerHTML = `Album: ${item.album}`;
-      tile.appendChild(albumElement);
-
-      // Ilość
-      const iloElement = document.createElement('p');
-      iloElement.textContent = item.ilosc > 0 ? `Ilość: ${item.ilosc}` : 'Brak na stanie';
-      tile.appendChild(iloElement);
-
-      // Wytwórnia i numer katalogowy
-      const wytwElement = document.createElement('p');
-      wytwElement.textContent = `${item.wytwornia} - ${item.nr}`;
-      tile.appendChild(wytwElement);
-
-      tilesContainer.appendChild(tile);
-    });
-  }
-
-  function applyFilter() {
-    // Pobierz wybrany filtr wykonawcy z radiobuttonów
-    const filterRadios = document.getElementsByName('filter');
-    let selectedFilter = 'all';
-    for (const radio of filterRadios) {
-      if (radio.checked) {
-        selectedFilter = radio.value;
-        break;
-      }
-    }
-
-    // Pobierz zaznaczone checkboxy FF
-    const ffCheckboxes = document.getElementsByName('ff');
-    const selectedFFs = [];
-    for (const cb of ffCheckboxes) {
-      if (cb.checked) {
-        selectedFFs.push(cb.value);
-      }
-    }
-
-    // Pobierz tekst z pola wyszukiwania
-    const searchQuery = document.getElementById('search').value
+      tile.appendChild(albumElement
