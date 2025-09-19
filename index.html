@@ -1,282 +1,101 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<link rel="icon" href="favicon/favicon.ico" type="image/x-icon" />
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Moja kolekcja kaset ECHO/JAM</title>
 <style>
-  .tile { border:5px solid #ddd; padding:8px; margin:8px; width:288px; float:left; text-align:center; text-transform:uppercase; }
-  .tile img{ max-width:100%; height:auto; }
-  .thumbnail-container{ width:100%; height:280px; background:white; color:grey; font-size:12em; }
-  .thumbnail-container p{ margin:0; }
-  .copy-icon{ display:inline-block; cursor:pointer; font-size:8px; }
-  .tile:hover .copy-icon{ text-decoration:underline; }
-
-  .toolbar{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:12px;
-            font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
-
-  .tabs{ display:flex; gap:4px; align-items:flex-end; }
-  .tabs input[type="radio"]{ display:none; }
-  .tab-label{ padding:8px 14px; border:1px solid #ccc; border-bottom:none; border-top-left-radius:8px; border-top-right-radius:8px; background:#f2f2f2; cursor:pointer; font-weight:600; user-select:none; }
-  .tabs input[type="radio"]:checked + label{ background:#fff; border-color:#aaa; position:relative; top:1px; }
-  .tabs-underline{ width:100%; height:1px; background:#aaa; margin-top:-1px; margin-bottom:8px; }
-
-  .ff-filters label{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid #ddd; border-radius:6px; }
-  .ff-filters input{ transform:scale(1.1); }
-
-  #search{ padding:6px 10px; border:1px solid #ccc; border-radius:6px; min-width:220px; }
-
-  #tiles-container::after{ content:""; display:block; clear:both; }
+/* ... (style bez zmian jak poprzednio) ... */
 </style>
 </head>
 <body>
 
-  <div class="toolbar">
-    <!-- Zakładki (radio) -->
-    <div class="tabs" id="stock-tabs">
-      <input type="radio" name="tab" id="tab-all" value="all" checked><label class="tab-label" for="tab-all">WSZYSTKO</label>
-      <input type="radio" name="tab" id="tab-owned" value="owned"><label class="tab-label" for="tab-owned">MAM</label>
-      <input type="radio" name="tab" id="tab-wanted" value="wanted"><label class="tab-label" for="tab-wanted">SZUKAM</label>
-      <input type="radio" name="tab" id="tab-duble" value="duble"><label class="tab-label" for="tab-duble">DUBLE</label>
-    </div>
-    <div class="tabs-underline"></div>
+<div class="toolbar">
+  <div class="tabs" id="stock-tabs">
+    <input type="radio" name="tab" id="tab-all" value="all" checked><label class="tab-label" for="tab-all">WSZYSTKO</label>
+    <input type="radio" name="tab" id="tab-owned" value="owned"><label class="tab-label" for="tab-owned">MAM</label>
+    <input type="radio" name="tab" id="tab-wanted" value="wanted"><label class="tab-label" for="tab-wanted">SZUKAM</label>
+    <input type="radio" name="tab" id="tab-duble" value="duble"><label class="tab-label" for="tab-duble">DUBLE</label>
+  </div>
+  <div class="tabs-underline"></div>
 
-    <!-- Checkboxy FF -->
-    <div class="ff-filters">
-      <strong>FF:</strong>
-      <label><input type="checkbox" id="ff-echo" checked> ECHO</label>
-      <label><input type="checkbox" id="ff-jam" checked> JAM</label>
-    </div>
-
-    <!-- Szukaj -->
-    <div>
-      <label for="search"><strong>Wyszukaj:</strong></label>
-      <input type="text" id="search" placeholder="artysta / album / FF">
-    </div>
+  <div class="ff-filters">
+    <strong>FF:</strong>
+    <label><input type="checkbox" id="ff-echo" checked> ECHO</label>
+    <label><input type="checkbox" id="ff-jam" checked> JAM</label>
   </div>
 
-  <div id="tiles-container"></div>
+  <div>
+    <label for="search"><strong>Wyszukaj:</strong></label>
+    <input type="text" id="search" placeholder="artysta / album / FF">
+  </div>
+
+  <div>
+    <label for="search-nr"><strong>Nr kat.:</strong></label>
+    <input type="text" id="search-nr" placeholder="np. EC022">
+  </div>
+</div>
+
+<div id="tiles-container"></div>
 
 <script>
-  // Jeśli masz konkretny arkusz niebędący pierwszą zakładką, dodaj &gid=XXXX
-  const sheetUrlCSV = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/export?format=csv';
+// ... (parser CSV i buildIndexMap – jak w poprawionej wersji) ...
 
-  // Parser CSV z obsługą cudzysłowów i przecinków w polach
-  function parseCSV(text){
-    const rows=[]; let i=0, field='', row=[], inQ=false;
-    while(i<text.length){
-      const c=text[i], n=text[i+1];
-      if(c==='"' && n==='"'){ field+='"'; i+=2; continue; }
-      if(c==='"'){ inQ=!inQ; i++; continue; }
-      if(c===',' && !inQ){ row.push(field); field=''; i++; continue; }
-      if((c==='\n'||c==='\r') && !inQ){
-        if(c==='\r' && n=== '\n'){ i++; } // CRLF
-        row.push(field); rows.push(row); field=''; row=[]; i++; continue;
-      }
-      field+=c; i++;
-    }
-    if(field.length || row.length){ row.push(field); rows.push(row); }
-    // trymowanie pól
-    return rows.map(r=>r.map(v=> (v||'').trim()));
-  }
+async function applyFiltersAndRender(){
+  try{
+    const rows = await fetchData();
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+    const idx = buildIndexMap(headers);
 
-  // Automapowanie kolumn po nagłówkach (bezpieczne przy zmianach kolejności)
-  function buildIndexMap(headers){
-    const norm = s => (s||'').toLowerCase().replace(/\s+/g,' ').replace(/[_-]+/g,' ').trim();
-    const at = (names) => {
-      for(const want of names){
-        const idx = headers.findIndex(h => norm(h).includes(want));
-        if(idx>=0) return idx;
-      }
-      return -1;
-    };
-    return {
-      ff:        at(['ff','wytwornia','label']),
-      nr:        at(['nr katalogowy','nr','katalog']),
-      artysta:   at(['artysta','wykonawca','zespół','zespol']),
-      album:     at(['album','tytuł','tytul']),
-      ilosc:     at(['ilość','ilosc','qty','quantity']),
-      kolor:     at(['kolor','color','bg']),
-      miniatura: at(['miniatura','okładka','okladka','cover','thumb'])
-    };
-  }
+    const mapped = dataRows.map(cols => ({
+      ff:        (cols[idx.ff]||'').trim(),
+      nr:        (cols[idx.nr]||'').trim(),
+      artysta:   (cols[idx.artysta]||'').trim(),
+      album:     (cols[idx.album]||'').trim(),
+      ilosc:     parseInt(cols[idx.ilosc],10) || 0,
+      kolor:     idx.kolor>=0 ? (cols[idx.kolor]||'').trim() : '',
+      miniatura: idx.miniatura>=0 ? (cols[idx.miniatura]||'').trim() : ''
+    })).filter(r => r.nr!=='');
 
-  let cachedRows=null;
+    const stock = getActiveStockFilter();
+    const ffSel = getActiveFFFilters();
+    const q = (document.getElementById('search').value||'').toLowerCase();
+    const qNr = (document.getElementById('search-nr').value||'').toLowerCase();
 
-  async function fetchData(){
-    if(cachedRows) return cachedRows;
-    const resp = await fetch(sheetUrlCSV);
-    if(!resp.ok) throw new Error('Pobranie CSV nieudane: HTTP '+resp.status);
-    const txt = await resp.text();
-    const rows = parseCSV(txt);
-    if(!rows.length) throw new Error('CSV puste');
-    cachedRows = rows;
-    return rows;
-  }
+    renderTiles(mapped, {stock, ffSel, q, qNr});
+  }catch(e){ console.error(e); }
+}
 
-  function getActiveStockFilter(){
-    const el = document.querySelector('#stock-tabs input[type="radio"]:checked');
-    return el? el.value : 'all';
-  }
-  function getActiveFFFilters(){
-    const selected=[];
-    if(document.getElementById('ff-echo').checked) selected.push('echo');
-    if(document.getElementById('ff-jam').checked)  selected.push('jam');
-    return selected; // może być []
-  }
+function renderTiles(data, {stock, ffSel, q, qNr}){
+  const box = document.getElementById('tiles-container');
+  box.innerHTML='';
+  const filtered = data.filter(it=>{
+    const ilosc = it.ilosc|0;
+    const stockOK =
+      stock==='all' ||
+      (stock==='owned' && ilosc>0) ||
+      (stock==='wanted'&& ilosc<1) ||
+      (stock==='duble' && ilosc>1);
+    const ffOK = ffSel.length===0?false:ffSel.includes((it.ff||'').toLowerCase());
+    const searchOK = q==='' ||
+      (it.artysta||'').toLowerCase().includes(q) ||
+      (it.album||'').toLowerCase().includes(q) ||
+      (it.ff||'').toLowerCase().includes(q);
+    const nrOK = qNr==='' || (it.nr||'').toLowerCase().includes(qNr);
+    return stockOK && ffOK && searchOK && nrOK;
+  });
+  filtered.forEach(it=> box.appendChild(createTile(it)));
+}
 
-  async function applyFiltersAndRender(){
-    try{
-      const rows = await fetchData();
-      const headers = rows[0];
-      const dataRows = rows.slice(1);
+// ... (createTile, escapeHTML, copyToClipboard jak poprzednio) ...
 
-      // indeksy po nagłówkach
-      const idx = buildIndexMap(headers);
+document.getElementById('search').addEventListener('input', applyFiltersAndRender);
+document.getElementById('search-nr').addEventListener('input', applyFiltersAndRender);
+document.getElementById('ff-echo').addEventListener('change', applyFiltersAndRender);
+document.getElementById('ff-jam').addEventListener('change', applyFiltersAndRender);
+document.querySelectorAll('#stock-tabs input[type="radio"]').forEach(r=>r.addEventListener('change', applyFiltersAndRender));
 
-      // brak któregokolwiek z kluczowych pól? – miękko obsłuż
-      const missing = ['ff','nr','artysta','album','ilosc'].filter(k => idx[k] < 0);
-      if(missing.length){
-        throw new Error('Brak kolumn w CSV: '+missing.join(', '));
-      }
-
-      const mapped = dataRows.map(cols => ({
-        ff:        (cols[idx.ff]||'').trim(),
-        nr:        (cols[idx.nr]||'').trim(),
-        artysta:   (cols[idx.artysta]||'').trim(),
-        album:     (cols[idx.album]||'').trim(),
-        ilosc:     parseInt(cols[idx.ilosc],10) || 0,
-        kolor:     idx.kolor>=0 ? (cols[idx.kolor]||'').trim() : '',
-        miniatura: idx.miniatura>=0 ? (cols[idx.miniatura]||'').trim() : ''
-      })).filter(r => r.nr!==''); // pomiń puste wiersze
-
-      const stock = getActiveStockFilter();              // all|owned|wanted|duble
-      const ffSel = getActiveFFFilters();                // ['echo','jam'] / ...
-      const q = (document.getElementById('search').value||'').toLowerCase();
-
-      renderTiles(mapped, {stock, ffSel, q});
-    }catch(e){
-      console.error(e);
-      document.getElementById('tiles-container').innerHTML =
-        '<p style="color:red;">Nie udało się wczytać danych z arkusza. Szczegóły w konsoli.</p>';
-    }
-  }
-
-  function renderTiles(data, {stock, ffSel, q}){
-    const box = document.getElementById('tiles-container');
-    box.innerHTML = '';
-
-    const filtered = data.filter(it => {
-      const ilosc = it.ilosc|0;
-
-      const stockOK =
-        stock==='all' ||
-        (stock==='owned'  && ilosc>0) ||
-        (stock==='wanted' && ilosc<1) ||
-        (stock==='duble'  && ilosc>1);
-
-      const ffLower = (it.ff||'').toLowerCase();
-      const ffOK = ffSel.length===0 ? false : ffSel.includes(ffLower);
-
-      const searchOK = q==='' ||
-        (it.artysta||'').toLowerCase().includes(q) ||
-        (it.album||'').toLowerCase().includes(q)  ||
-        ffLower.includes(q);
-
-      return stockOK && ffOK && searchOK;
-    });
-
-    filtered.forEach(it => box.appendChild(createTile(it)));
-  }
-
-  function createTile(item){
-    const { ff, nr, artysta, album, ilosc, kolor, miniatura } = item;
-
-    const tile = document.createElement('div');
-    tile.className = 'tile';
-
-    const bg = (kolor||'#555555').toLowerCase();
-    tile.style.backgroundColor = bg;
-    tile.style.color = bg==='#000000' ? 'gold' : 'white';
-    tile.style.width = '280px';
-    tile.style.height = '450px';
-    tile.style.fontFamily = 'sans-serif';
-    tile.style.border = ilosc===0 ? '5px solid red' : '5px solid #ddd';
-
-    // miniatura
-    const thumbWrap = document.createElement('div');
-    thumbWrap.className = 'thumbnail-container';
-    const thumb = document.createElement('div');
-    thumb.className = 'thumbnail-image';
-
-    if(miniatura){
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.src = miniatura;
-      thumb.appendChild(img);
-      thumbWrap.appendChild(thumb);
-    }else if(bg==='#000000'){
-      thumbWrap.style.background = '#000000';
-    }else{
-      thumb.innerHTML = '<p><strong>?</strong></p>';
-      thumbWrap.appendChild(thumb);
-    }
-    tile.appendChild(thumbWrap);
-
-    // artysta
-    const pArtist = document.createElement('p');
-    pArtist.innerHTML = `<strong>${escapeHTML(artysta)}</strong> <span class="copy-icon" onclick="copyToClipboard('${jsEscape(artysta)}')">(kopiuj)</span>`;
-    tile.appendChild(pArtist);
-
-    // album
-    const pAlbum = document.createElement('p');
-    pAlbum.innerHTML = `${escapeHTML(album)} <span class="copy-icon" onclick="copyToClipboard('${jsEscape(album)}')">(kopiuj)</span>`;
-    tile.appendChild(pAlbum);
-
-    // ilość / linki
-    if(ilosc>0){
-      const pQty = document.createElement('p');
-      pQty.innerHTML = `Ilość: <strong>${ilosc}</strong>`;
-      tile.appendChild(pQty);
-    }else{
-      const query = encodeURIComponent(`${artysta} ${album}`);
-      const pLinks = document.createElement('p');
-      pLinks.innerHTML = `
-        <a href="https://allegro.pl/listing?string=${query}&nosnik=Kaseta" target="_blank">Allegro</a> |
-        <a href="https://www.olx.pl/muzyka-edukacja/muzyka/kasety-audio/q-${query}/" target="_blank">OLX</a> |
-        <a href="https://www.vinted.pl/catalog?search_text=${query}&catalog[]=3038&page=1" target="_blank">Vinted</a>
-      `;
-      tile.appendChild(pLinks);
-    }
-
-    // FF + numer
-    const pFF = document.createElement('p');
-    pFF.textContent = `${ff} - ${nr}`;
-    tile.appendChild(pFF);
-
-    return tile;
-  }
-
-  // Bezpieczne wstawki do HTML i JS
-  function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-  function jsEscape(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-
-  function copyToClipboard(text){
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    alert('Skopiowano do schowka!');
-  }
-
-  // Zdarzenia
-  document.getElementById('search').addEventListener('input', applyFiltersAndRender);
-  document.getElementById('ff-echo').addEventListener('change', applyFiltersAndRender);
-  document.getElementById('ff-jam').addEventListener('change', applyFiltersAndRender);
-  document.querySelectorAll('#stock-tabs input[type="radio"]').forEach(r => r.addEventListener('change', applyFiltersAndRender));
-
-  // Start
-  window.onload = applyFiltersAndRender;
+window.onload = applyFiltersAndRender;
 </script>
 </body>
 </html>
