@@ -1,257 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
-<link rel="icon" href="favicon/favicon.ico" type="image/x-icon" />
- 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moja kolekcja kaset ECHO/JAM</title>
-    <style>
-        /* Dodaj stylizację kafli */
-        .tile {
-            border: 5px solid #ddd;
-            padding: 8px;
-            margin: 8px;
-            width: 288px;
-            float: left;
-            /* Kaflowy układ - jeden obok drugiego */
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filtr wykonawcy i FF - radiobuttony i checkboxy</title>
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 20px;
+  }
+  .filter-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .radio-tab-group,
+  .checkbox-group {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
 
-        .tile img {
-            max-width: 100%;
-            height: auto;
-        }
-        .tile {
-            text-align: center;
-            text-transform: uppercase;
-        }
+  /* Ukrycie radiobuttonów i checkboxów */
+  input[type="radio"],
+  input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
 
-        .thumbnail-container
-        { width: 100%; 
-         height: 280px; 
-         background: white;
-         color: grey; 
-         font-size: 12em
-        }
-        .thumbnail-container p {
-            display: block;
-            margin-block-start: 0em;
-            margin-block-end: 0em;
-            margin-inline-start: 0px;
-            margin-inline-end: 0px;
-        }
+  /* Styl etykiet jako przyciski/zakładki */
+  .radio-tab-group label,
+  .checkbox-group label {
+    cursor: pointer;
+    padding: 8px 22px;
+    border: 1px solid #ccc;
+    border-radius: 4px 4px 0 0;
+    background-color: #f0f0f0;
+    user-select: none;
+    transition: background-color 0.3s, border-color 0.3s;
+    font-weight: normal;
+    color: #333;
+    outline-offset: 2px;
+    outline: none;
+    flex-shrink: 0;
+  }
 
-         .copy-icon {
-            display: inline-block;
-            cursor: pointer;
-           font-size: 8px;
-        }
+  .radio-tab-group label:focus,
+  .checkbox-group label:focus {
+    outline: 2px solid #0078d7;
+  }
 
-        .tile:hover .copy-icon {
-            text-decoration: underline;
-        }
-        
-    </style>
+  /* Dla radiobuttonów: tylko jeden jest aktywny */
+  .radio-tab-group label:not(:last-child) {
+    border-right: none;
+  }
+  input[type="radio"]:checked + label {
+    background-color: white;
+    border-color: #0078d7 #0078d7 white #0078d7;
+    font-weight: bold;
+    color: #0078d7;
+    position: relative;
+    top: 1px;
+    z-index: 1;
+  }
+
+  /* Dla checkboxów: mogą być zaznaczone niezależnie */
+  input[type="checkbox"]:checked + label {
+    background-color: white;
+    border-color: #0078d7;
+    font-weight: bold;
+    color: #0078d7;
+    position: relative;
+    z-index: 1;
+    border-radius: 4px;
+  }
+
+  /* Dodatkowo dla checkboxów zaokrąglenie przycisków nieco inne */
+  .checkbox-group label {
+    border-radius: 4px;
+  }
+</style>
 </head>
-
 <body>
-    <!-- Dodaj filtr -->
-   <label for="filter">Filtr wykonawcy: </label>
-    <select id="filter" onchange="applyFilter()">
-        <option value="all">WSZYSTKO</option>
-        <option value="owned">MAM</option>
-        <option value="wanted">SZUKAM</option>
-           <option value="duble">DUBLE</option>
-    </select>
 
-    <label for="search">Wyszukaj: </label>
-    <input type="text" id="search" oninput="applySearch()">
+<h2>Przykładowy filtr z radiobuttonami i checkboxami</h2>
 
- 
+<!-- Filtr wykonawcy jako radiobuttony -->
+<div class="filter-label" id="label-filter">Filtr wykonawcy</div>
+<div class="radio-tab-group" role="radiogroup" aria-labelledby="label-filter">
+  <input type="radio" id="filter-all" name="filter" value="all" checked onchange="applyFilter()" />
+  <label for="filter-all" tabindex="0">WSZYSTKO</label>
 
-    <div id="tiles-container"></div>
+  <input type="radio" id="filter-owned" name="filter" value="owned" onchange="applyFilter()" />
+  <label for="filter-owned" tabindex="0">MAM</label>
 
-    <script>
-        const sheetUrlCSV = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/export?format=csv';
-
-// Prosty parser CSV - działający dla prostych plików CSV bez zagnieżdżonych przecinków w polach
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  return lines.map(line => line.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
-}
-
-async function fetchData(filter, searchQuery) {
-  try {
-    // Możesz dodać cache w localStorage, tu jest przykład bez cache
-    const response = await fetch(sheetUrlCSV);
-    if (!response.ok) throw new Error('Nie udało się pobrać danych z arkusza');
-
-    const csvText = await response.text();
-    const rows = parseCSV(csvText);
-
-    // Kolumny według arkusza: z nagłówków możesz dopasować indeksy
-    // Załóżmy, że nagłówki są w pierwszej linii
-    const headers = rows[0];
-    const dataRows = rows.slice(1);
-
-    // Indeksy na podstawie Twojego pliku
-    const idxWytwornia = 0;
-    const idxNr = 2;
-    const idxArtysta = 3;
-    const idxAlbum = 4;
-    const idxIlosc = 6;
-    const idxKolor = 9;
-    const idxMiniatura = 10;
-
-    const rowData = dataRows.map(cols => ({
-      wytwornia: cols[idxWytwornia] || '',
-      nr: cols[idxNr] || '',
-      artysta: cols[idxArtysta] || '',
-      album: cols[idxAlbum] || '',
-      ilosc: parseInt(cols[idxIlosc]) || 0,
-      kolor: cols[idxKolor] || '',
-      miniatura: cols[idxMiniatura] || '',
-    })).filter(item => item.nr !== '');
-
-    renderTiles(rowData, filter, searchQuery);
-
-  } catch (error) {
-    console.error('Błąd pobierania danych:', error);
-    const tilesContainer = document.getElementById('tiles-container');
-    tilesContainer.innerHTML = '<p style="color:red;">Błąd pobierania danych z arkusza. Sprawdź konsolę.</p>';
-  }
-}
-
-function renderTiles(data, filter, searchQuery) {
-  const tilesContainer = document.getElementById('tiles-container');
-  // Czyść istniejące kafle
-  tilesContainer.innerHTML = '';
-
-  const searchLower = searchQuery.toLowerCase();
-
-  const filteredData = data.filter(item => {
-    const ilosc = item.ilosc;
-    const artistLowerCase = item.artysta.toLowerCase();
-    const albumLowerCase = item.album.toLowerCase();
-    const wytworniaLowerCase = item.wytwornia.toLowerCase();
-
-    const filterCondition =
-      filter === 'all' ||
-      (filter === 'owned' && ilosc > 0) ||
-      (filter === 'wanted' && ilosc < 1) ||
-      (filter === 'duble' && ilosc > 1);
-
-    const searchCondition =
-      searchQuery === '' ||
-      artistLowerCase.includes(searchLower) ||
-      albumLowerCase.includes(searchLower) ||
-      wytworniaLowerCase.includes(searchLower);
-
-    return filterCondition && searchCondition;
-  });
-
-  filteredData.forEach(item => {
-    const tile = createTile(item);
-    tilesContainer.appendChild(tile);
-  });
-}
-
-function createTile(item) {
-  const { wytwornia, nr, artysta, album, ilosc, kolor, miniatura } = item;
-
-  const tile = document.createElement('div');
-  tile.classList.add('tile');
-
-  const kafelColor = kolor ? kolor.toLowerCase() : '#555555';
-  tile.style.backgroundColor = kafelColor;
-  tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
-  tile.style.width = '280px';
-  tile.style.height = '450px';
-  tile.style.fontFamily = 'sans-serif';
-  tile.style.border = ilosc === 0 ? '5px solid red' : '5px solid #ddd';
-
-  // miniatura
-  const thumbnailContainer = document.createElement('div');
-  thumbnailContainer.classList.add('thumbnail-container');
-  thumbnailContainer.style.width = '100%';
-  thumbnailContainer.style.height = '280px';
-
-  const thumbnailImage = document.createElement('div');
-  thumbnailImage.classList.add('thumbnail-image');
-
-  if (miniatura && miniatura !== '') {
-    const imageElement = document.createElement('img');
-    imageElement.src = miniatura;
-    imageElement.loading = "lazy"; // lazy loading
-    thumbnailImage.appendChild(imageElement);
-    thumbnailContainer.appendChild(thumbnailImage);
-  } else if (kafelColor === '#000000') {
-    thumbnailContainer.style.background = '#000000';
-  } else {
-    thumbnailImage.innerHTML = `<p><strong>?</strong></p>`;
-    thumbnailContainer.appendChild(thumbnailImage);
-  }
-
-  tile.appendChild(thumbnailContainer);
-
-  // artysta
-  const artistElement = document.createElement('p');
-  artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta}')">(kopiuj)</span>`;
-  tile.appendChild(artistElement);
-
-  // album
-  const albumElement = document.createElement('p');
-  albumElement.innerHTML = `${album} <span class="copy-icon" onclick="copyToClipboard('${album}')">(kopiuj)</span>`;
-  tile.appendChild(albumElement);
-
-  // ilość > 0 → pokazujemy ilość
-  if (ilosc > 0) {
-    tile.innerHTML += `<p>Ilość: <strong>${ilosc}</strong></p>`;
-  } else {
-    // ilość == 0 → pokazujemy linki do portali
-    const query = encodeURIComponent(`${artysta} ${album}`);
-    const linksElement = document.createElement('p');
-    linksElement.innerHTML = `
-      <a href="https://allegro.pl/listing?string=${query}&nosnik=Kaseta" target="_blank">Allegro</a> | 
-      <a href="https://www.olx.pl/muzyka-edukacja/muzyka/kasety-audio/q-${query}/" target="_blank">OLX</a> |    
-      <a href="https://www.vinted.pl/catalog?search_text=${query}&catalog[]=3038&page=1" target="_blank">Vinted</a>
-    `;
-    tile.appendChild(linksElement);
-  }
-
-  // zawsze dodajemy wytwórnię i numer katalogowy
-  tile.innerHTML += `<p>${wytwornia} - ${nr}</p>`;
-
-  return tile;
-}
-
-function applyFilter() {
-  const filter = document.getElementById('filter').value;
-  const searchQuery = document.getElementById('search').value.toLowerCase();
-  fetchData(filter, searchQuery);
-}
-
-function applySearch() {
-  const filter = document.getElementById('filter').value;
-  const searchQuery = document.getElementById('search').value.toLowerCase();
-  fetchData(filter, searchQuery);
-}
-
-function copyToClipboard(text) {
-  const dummyElement = document.createElement('textarea');
-  dummyElement.value = text;
-  document.body.appendChild(dummyElement);
-  dummyElement.select();
-  document.execCommand('copy');
-  document.body.removeChild(dummyElement);
-  alert('Skopiowano do schowka!');
-}
-
-window.onload = function () {
-  document.title = "Moja kolekcja kaset ECHO/JAM";
-  fetchData('all', ''); // Domyślnie bez filtra i bez szukania
-};
-
-    </script>
-</body>
-</html>
+  <input type="radio" id="filter-wanted" name="filter" value="wanted" onchange="applyFilter()" />
+  <label for="
