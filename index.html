@@ -6,109 +6,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Moja kolekcja kaset ECHO/JAM</title>
 <style>
-  /* Kafle */
-  .tile {
-    border: 5px solid #ddd;
-    padding: 8px;
-    margin: 8px;
-    width: 288px;
-    float: left;
-    text-align: center;
-    text-transform: uppercase;
-  }
-  .tile img { max-width: 100%; height: auto; }
+  .tile { border:5px solid #ddd; padding:8px; margin:8px; width:288px; float:left; text-align:center; text-transform:uppercase; }
+  .tile img{ max-width:100%; height:auto; }
+  .thumbnail-container{ width:100%; height:280px; background:white; color:grey; font-size:12em; }
+  .thumbnail-container p{ margin:0; }
+  .copy-icon{ display:inline-block; cursor:pointer; font-size:8px; }
+  .tile:hover .copy-icon{ text-decoration:underline; }
 
-  .thumbnail-container {
-    width: 100%; height: 280px; background: white; color: grey; font-size: 12em;
-  }
-  .thumbnail-container p { margin: 0; }
+  .toolbar{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:12px;
+            font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
 
-  .copy-icon { display: inline-block; cursor: pointer; font-size: 8px; }
-  .tile:hover .copy-icon { text-decoration: underline; }
+  .tabs{ display:flex; gap:4px; align-items:flex-end; }
+  .tabs input[type="radio"]{ display:none; }
+  .tab-label{ padding:8px 14px; border:1px solid #ccc; border-bottom:none; border-top-left-radius:8px; border-top-right-radius:8px; background:#f2f2f2; cursor:pointer; font-weight:600; user-select:none; }
+  .tabs input[type="radio"]:checked + label{ background:#fff; border-color:#aaa; position:relative; top:1px; }
+  .tabs-underline{ width:100%; height:1px; background:#aaa; margin-top:-1px; margin-bottom:8px; }
 
-  /* Pasek narzędzi */
-  .toolbar {
-    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  }
-  .toolbar .group { display: flex; align-items: center; gap: 8px; }
+  .ff-filters label{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid #ddd; border-radius:6px; }
+  .ff-filters input{ transform:scale(1.1); }
 
-  /* Zakładki oparte o radiobuttony */
-  .tabs {
-    display: flex; gap: 4px; align-items: flex-end;
-  }
-  .tabs input[type="radio"] { display: none; }
+  #search{ padding:6px 10px; border:1px solid #ccc; border-radius:6px; min-width:220px; }
 
-  .tab-label {
-    padding: 8px 14px;
-    border: 1px solid #ccc;
-    border-bottom: none;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    background: #f2f2f2;
-    cursor: pointer;
-    font-weight: 600;
-    user-select: none;
-  }
-  /* aktywna zakładka */
-  .tabs input[type="radio"]:checked + label {
-    background: #fff;
-    border-color: #aaa;
-    position: relative;
-    top: 1px;
-  }
-
-  /* Pasek pod zakładkami (linia) */
-  .tabs-underline {
-    width: 100%;
-    height: 1px;
-    background: #aaa;
-    margin-top: -1px;
-    margin-bottom: 8px;
-  }
-
-  /* Checkboxy FF */
-  .ff-filters label { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; }
-  .ff-filters input { transform: scale(1.1); }
-
-  /* Pole wyszukiwania */
-  #search { padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; min-width: 220px; }
-
-  /* Kontener kafli */
-  #tiles-container::after { content: ""; display: block; clear: both; }
+  #tiles-container::after{ content:""; display:block; clear:both; }
 </style>
 </head>
 <body>
 
   <div class="toolbar">
-    <!-- Zakładki (radiobuttony) zamiast selecta: WSZYSTKO / MAM / SZUKAM / DUBLE -->
-    <div class="group" style="flex: 1 1 380px; min-width: 320px;">
-      <div class="tabs" id="stock-tabs">
-        <input type="radio" name="tab" id="tab-all" value="all" checked>
-        <label class="tab-label" for="tab-all">WSZYSTKO</label>
-
-        <input type="radio" name="tab" id="tab-owned" value="owned">
-        <label class="tab-label" for="tab-owned">MAM</label>
-
-        <input type="radio" name="tab" id="tab-wanted" value="wanted">
-        <label class="tab-label" for="tab-wanted">SZUKAM</label>
-
-        <input type="radio" name="tab" id="tab-duble" value="duble">
-        <label class="tab-label" for="tab-duble">DUBLE</label>
-      </div>
+    <!-- Zakładki (radio) -->
+    <div class="tabs" id="stock-tabs">
+      <input type="radio" name="tab" id="tab-all" value="all" checked><label class="tab-label" for="tab-all">WSZYSTKO</label>
+      <input type="radio" name="tab" id="tab-owned" value="owned"><label class="tab-label" for="tab-owned">MAM</label>
+      <input type="radio" name="tab" id="tab-wanted" value="wanted"><label class="tab-label" for="tab-wanted">SZUKAM</label>
+      <input type="radio" name="tab" id="tab-duble" value="duble"><label class="tab-label" for="tab-duble">DUBLE</label>
     </div>
-
     <div class="tabs-underline"></div>
 
-    <!-- Checkboxy FF (ECHO / JAM) -->
-    <div class="group ff-filters">
+    <!-- Checkboxy FF -->
+    <div class="ff-filters">
       <strong>FF:</strong>
       <label><input type="checkbox" id="ff-echo" checked> ECHO</label>
       <label><input type="checkbox" id="ff-jam" checked> JAM</label>
     </div>
 
-    <!-- Wyszukiwarka -->
-    <div class="group">
+    <!-- Szukaj -->
+    <div>
       <label for="search"><strong>Wyszukaj:</strong></label>
       <input type="text" id="search" placeholder="artysta / album / FF">
     </div>
@@ -117,154 +59,224 @@
   <div id="tiles-container"></div>
 
 <script>
+  // Jeśli masz konkretny arkusz niebędący pierwszą zakładką, dodaj &gid=XXXX
   const sheetUrlCSV = 'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/export?format=csv';
 
-  // Prosty parser CSV (bez obsługi zagnieżdżonych przecinków w cudzysłowie)
-  function parseCSV(text) {
-    const lines = text.trim().split('\n');
-    return lines.map(line => line.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
+  // Parser CSV z obsługą cudzysłowów i przecinków w polach
+  function parseCSV(text){
+    const rows=[]; let i=0, field='', row=[], inQ=false;
+    while(i<text.length){
+      const c=text[i], n=text[i+1];
+      if(c==='"' && n==='"'){ field+='"'; i+=2; continue; }
+      if(c==='"'){ inQ=!inQ; i++; continue; }
+      if(c===',' && !inQ){ row.push(field); field=''; i++; continue; }
+      if((c==='\n'||c==='\r') && !inQ){
+        if(c==='\r' && n=== '\n'){ i++; } // CRLF
+        row.push(field); rows.push(row); field=''; row=[]; i++; continue;
+      }
+      field+=c; i++;
+    }
+    if(field.length || row.length){ row.push(field); rows.push(row); }
+    // trymowanie pól
+    return rows.map(r=>r.map(v=> (v||'').trim()));
   }
 
-  let cachedRows = null; // proste cache w pamięci strony
+  // Automapowanie kolumn po nagłówkach (bezpieczne przy zmianach kolejności)
+  function buildIndexMap(headers){
+    const norm = s => (s||'').toLowerCase().replace(/\s+/g,' ').replace(/[_-]+/g,' ').trim();
+    const at = (names) => {
+      for(const want of names){
+        const idx = headers.findIndex(h => norm(h).includes(want));
+        if(idx>=0) return idx;
+      }
+      return -1;
+    };
+    return {
+      ff:        at(['ff','wytwornia','label']),
+      nr:        at(['nr katalogowy','nr','katalog']),
+      artysta:   at(['artysta','wykonawca','zespół','zespol']),
+      album:     at(['album','tytuł','tytul']),
+      ilosc:     at(['ilość','ilosc','qty','quantity']),
+      kolor:     at(['kolor','color','bg']),
+      miniatura: at(['miniatura','okładka','okladka','cover','thumb'])
+    };
+  }
 
-  async function fetchData() {
-    if (cachedRows) return cachedRows;
-    const response = await fetch(sheetUrlCSV);
-    if (!response.ok) throw new Error('Nie udało się pobrać danych z arkusza');
+  let cachedRows=null;
 
-    const csvText = await response.text();
-    const rows = parseCSV(csvText);
+  async function fetchData(){
+    if(cachedRows) return cachedRows;
+    const resp = await fetch(sheetUrlCSV);
+    if(!resp.ok) throw new Error('Pobranie CSV nieudane: HTTP '+resp.status);
+    const txt = await resp.text();
+    const rows = parseCSV(txt);
+    if(!rows.length) throw new Error('CSV puste');
     cachedRows = rows;
     return rows;
   }
 
-  function getActiveStockFilter() {
-    const checked = document.querySelector('#stock-tabs input[type="radio"]:checked');
-    return checked ? checked.value : 'all';
+  function getActiveStockFilter(){
+    const el = document.querySelector('#stock-tabs input[type="radio"]:checked');
+    return el? el.value : 'all';
+  }
+  function getActiveFFFilters(){
+    const selected=[];
+    if(document.getElementById('ff-echo').checked) selected.push('echo');
+    if(document.getElementById('ff-jam').checked)  selected.push('jam');
+    return selected; // może być []
   }
 
-  function getActiveFFFilters() {
-    const echo = document.getElementById('ff-echo').checked;
-    const jam  = document.getElementById('ff-jam').checked;
-    const selected = [];
-    if (echo) selected.push('echo');
-    if (jam)  selected.push('jam');
-    return selected; // może być pusta tablica => nic nie pokaże
-  }
-
-  async function applyFiltersAndRender() {
-    try {
+  async function applyFiltersAndRender(){
+    try{
       const rows = await fetchData();
-
       const headers = rows[0];
       const dataRows = rows.slice(1);
 
-      // Indeksy kolumn dopasowane do Twojego arkusza
-      const idxFF        = 0;  // kolumna FF: ECHO / JAM
-      const idxNr        = 2;
-      const idxArtysta   = 3;
-      const idxAlbum     = 4;
-      const idxIlosc     = 6;
-      const idxKolor     = 9;
-      const idxMiniatura = 10;
+      // indeksy po nagłówkach
+      const idx = buildIndexMap(headers);
 
-      const rowData = dataRows.map(cols => ({
-        ff: (cols[idxFF] || '').trim(),             // ECHO / JAM
-        nr: cols[idxNr] || '',
-        artysta: cols[idxArtysta] || '',
-        album: cols[idxAlbum] || '',
-        ilosc: parseInt(cols[idxIlosc]) || 0,
-        kolor: cols[idxKolor] || '',
-        miniatura: cols[idxMiniatura] || ''
-      })).filter(item => item.nr !== '');
+      // brak któregokolwiek z kluczowych pól? – miękko obsłuż
+      const missing = ['ff','nr','artysta','album','ilosc'].filter(k => idx[k] < 0);
+      if(missing.length){
+        throw new Error('Brak kolumn w CSV: '+missing.join(', '));
+      }
 
-      const stockFilter = getActiveStockFilter();           // all | owned | wanted | duble
-      const ffSelected  = getActiveFFFilters();             // ['echo','jam'] / ['echo'] / ['jam'] / []
-      const q           = (document.getElementById('search').value || '').toLowerCase();
+      const mapped = dataRows.map(cols => ({
+        ff:        (cols[idx.ff]||'').trim(),
+        nr:        (cols[idx.nr]||'').trim(),
+        artysta:   (cols[idx.artysta]||'').trim(),
+        album:     (cols[idx.album]||'').trim(),
+        ilosc:     parseInt(cols[idx.ilosc],10) || 0,
+        kolor:     idx.kolor>=0 ? (cols[idx.kolor]||'').trim() : '',
+        miniatura: idx.miniatura>=0 ? (cols[idx.miniatura]||'').trim() : ''
+      })).filter(r => r.nr!==''); // pomiń puste wiersze
 
-      renderTiles(rowData, { stockFilter, ffSelected, q });
+      const stock = getActiveStockFilter();              // all|owned|wanted|duble
+      const ffSel = getActiveFFFilters();                // ['echo','jam'] / ...
+      const q = (document.getElementById('search').value||'').toLowerCase();
 
-    } catch (error) {
-      console.error('Błąd pobierania danych:', error);
-      const tilesContainer = document.getElementById('tiles-container');
-      tilesContainer.innerHTML = '<p style="color:red;">Błąd pobierania danych z arkusza. Sprawdź konsolę.</p>';
+      renderTiles(mapped, {stock, ffSel, q});
+    }catch(e){
+      console.error(e);
+      document.getElementById('tiles-container').innerHTML =
+        '<p style="color:red;">Nie udało się wczytać danych z arkusza. Szczegóły w konsoli.</p>';
     }
   }
 
-  function renderTiles(data, { stockFilter, ffSelected, q }) {
-    const tilesContainer = document.getElementById('tiles-container');
-    tilesContainer.innerHTML = '';
+  function renderTiles(data, {stock, ffSel, q}){
+    const box = document.getElementById('tiles-container');
+    box.innerHTML = '';
 
-    const filtered = data.filter(item => {
-      const ilosc = item.ilosc;
+    const filtered = data.filter(it => {
+      const ilosc = it.ilosc|0;
 
-      // Filtr zakładką (stan posiadania)
       const stockOK =
-        stockFilter === 'all' ||
-        (stockFilter === 'owned'  && ilosc > 0) ||
-        (stockFilter === 'wanted' && ilosc < 1) ||
-        (stockFilter === 'duble'  && ilosc > 1);
+        stock==='all' ||
+        (stock==='owned'  && ilosc>0) ||
+        (stock==='wanted' && ilosc<1) ||
+        (stock==='duble'  && ilosc>1);
 
-      // Filtr FF (checkboxy)
-      const ffLower = (item.ff || '').toLowerCase();
-      const ffOK = ffSelected.length === 0 ? false : ffSelected.includes(ffLower); // brak zaznaczeń => nic nie pokazuj
+      const ffLower = (it.ff||'').toLowerCase();
+      const ffOK = ffSel.length===0 ? false : ffSel.includes(ffLower);
 
-      // Szukajka: artysta / album / FF
-      const searchOK =
-        q === '' ||
-        (item.artysta || '').toLowerCase().includes(q) ||
-        (item.album   || '').toLowerCase().includes(q) ||
+      const searchOK = q==='' ||
+        (it.artysta||'').toLowerCase().includes(q) ||
+        (it.album||'').toLowerCase().includes(q)  ||
         ffLower.includes(q);
 
       return stockOK && ffOK && searchOK;
     });
 
-    filtered.forEach(item => tilesContainer.appendChild(createTile(item)));
+    filtered.forEach(it => box.appendChild(createTile(it)));
   }
 
-  function createTile(item) {
+  function createTile(item){
     const { ff, nr, artysta, album, ilosc, kolor, miniatura } = item;
 
     const tile = document.createElement('div');
-    tile.classList.add('tile');
+    tile.className = 'tile';
 
-    const kafelColor = kolor ? kolor.toLowerCase() : '#555555';
-    tile.style.backgroundColor = kafelColor;
-    tile.style.color = kafelColor === '#000000' ? 'gold' : 'white';
+    const bg = (kolor||'#555555').toLowerCase();
+    tile.style.backgroundColor = bg;
+    tile.style.color = bg==='#000000' ? 'gold' : 'white';
     tile.style.width = '280px';
     tile.style.height = '450px';
     tile.style.fontFamily = 'sans-serif';
-    tile.style.border = ilosc === 0 ? '5px solid red' : '5px solid #ddd';
+    tile.style.border = ilosc===0 ? '5px solid red' : '5px solid #ddd';
 
     // miniatura
-    const thumbnailContainer = document.createElement('div');
-    thumbnailContainer.classList.add('thumbnail-container');
-    thumbnailContainer.style.width = '100%';
-    thumbnailContainer.style.height = '280px';
+    const thumbWrap = document.createElement('div');
+    thumbWrap.className = 'thumbnail-container';
+    const thumb = document.createElement('div');
+    thumb.className = 'thumbnail-image';
 
-    const thumbnailImage = document.createElement('div');
-    thumbnailImage.classList.add('thumbnail-image');
-
-    if (miniatura && miniatura !== '') {
-      const imageElement = document.createElement('img');
-      imageElement.src = miniatura;
-      imageElement.loading = "lazy";
-      thumbnailImage.appendChild(imageElement);
-      thumbnailContainer.appendChild(thumbnailImage);
-    } else if (kafelColor === '#000000') {
-      thumbnailContainer.style.background = '#000000';
-    } else {
-      thumbnailImage.innerHTML = `<p><strong>?</strong></p>`;
-      thumbnailContainer.appendChild(thumbnailImage);
+    if(miniatura){
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.src = miniatura;
+      thumb.appendChild(img);
+      thumbWrap.appendChild(thumb);
+    }else if(bg==='#000000'){
+      thumbWrap.style.background = '#000000';
+    }else{
+      thumb.innerHTML = '<p><strong>?</strong></p>';
+      thumbWrap.appendChild(thumb);
     }
-
-    tile.appendChild(thumbnailContainer);
+    tile.appendChild(thumbWrap);
 
     // artysta
-    const artistElement = document.createElement('p');
-    artistElement.innerHTML = `<strong>${artysta}</strong> <span class="copy-icon" onclick="copyToClipboard('${artysta.replace(/'/g,"\\'")}')">(kopiuj)</span>`;
-    tile.appendChild(artistElement);
+    const pArtist = document.createElement('p');
+    pArtist.innerHTML = `<strong>${escapeHTML(artysta)}</strong> <span class="copy-icon" onclick="copyToClipboard('${jsEscape(artysta)}')">(kopiuj)</span>`;
+    tile.appendChild(pArtist);
 
     // album
-    const albumElement = document.createElement('p');
-    albumElement.innerHTML = `${album} <span class="copy-icon" onclick="
+    const pAlbum = document.createElement('p');
+    pAlbum.innerHTML = `${escapeHTML(album)} <span class="copy-icon" onclick="copyToClipboard('${jsEscape(album)}')">(kopiuj)</span>`;
+    tile.appendChild(pAlbum);
+
+    // ilość / linki
+    if(ilosc>0){
+      const pQty = document.createElement('p');
+      pQty.innerHTML = `Ilość: <strong>${ilosc}</strong>`;
+      tile.appendChild(pQty);
+    }else{
+      const query = encodeURIComponent(`${artysta} ${album}`);
+      const pLinks = document.createElement('p');
+      pLinks.innerHTML = `
+        <a href="https://allegro.pl/listing?string=${query}&nosnik=Kaseta" target="_blank">Allegro</a> |
+        <a href="https://www.olx.pl/muzyka-edukacja/muzyka/kasety-audio/q-${query}/" target="_blank">OLX</a> |
+        <a href="https://www.vinted.pl/catalog?search_text=${query}&catalog[]=3038&page=1" target="_blank">Vinted</a>
+      `;
+      tile.appendChild(pLinks);
+    }
+
+    // FF + numer
+    const pFF = document.createElement('p');
+    pFF.textContent = `${ff} - ${nr}`;
+    tile.appendChild(pFF);
+
+    return tile;
+  }
+
+  // Bezpieczne wstawki do HTML i JS
+  function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  function jsEscape(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+  function copyToClipboard(text){
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    alert('Skopiowano do schowka!');
+  }
+
+  // Zdarzenia
+  document.getElementById('search').addEventListener('input', applyFiltersAndRender);
+  document.getElementById('ff-echo').addEventListener('change', applyFiltersAndRender);
+  document.getElementById('ff-jam').addEventListener('change', applyFiltersAndRender);
+  document.querySelectorAll('#stock-tabs input[type="radio"]').forEach(r => r.addEventListener('change', applyFiltersAndRender));
+
+  // Start
+  window.onload = applyFiltersAndRender;
+</script>
+</body>
+</html>
