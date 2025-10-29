@@ -289,7 +289,7 @@
       wrap.appendChild(imgBox);
     } else {
       // Brak miniatury – zawsze pokazuj znak zapytania, nawet dla czarnego tła
-      if(bg==='#000000'){ wrap.style.background = '#000'; wrap.style.color = '#888'; }
+      if(bg!='#000000'){ wrap.style.background = '#000'; wrap.style.color = '#888'; }
       showPlaceholder();
     }
     tile.appendChild(wrap);
