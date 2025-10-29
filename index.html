@@ -274,9 +274,24 @@
     wrap.className = 'thumbnail-container';
     const imgBox = document.createElement('div');
     imgBox.className = 'thumbnail-image';
-    if(miniatura){ const img = document.createElement('img'); img.loading='lazy'; img.src = miniatura; imgBox.appendChild(img); wrap.appendChild(imgBox); }
-    else if(bg==='#000000'){ wrap.style.background = '#000'; }
-    else{ imgBox.innerHTML = '<p><strong>?</strong></p>'; wrap.appendChild(imgBox); }
+
+    const showPlaceholder = () => {
+      imgBox.innerHTML = '<p><strong>?</strong></p>';
+      wrap.appendChild(imgBox);
+    };
+
+    if(miniatura){
+      const img = document.createElement('img');
+      img.loading='lazy';
+      img.src = miniatura;
+      img.onerror = () => { imgBox.innerHTML=''; showPlaceholder(); };
+      imgBox.appendChild(img);
+      wrap.appendChild(imgBox);
+    } else {
+      // Brak miniatury – zawsze pokazuj znak zapytania, nawet dla czarnego tła
+      if(bg==='#000000'){ wrap.style.background = '#000'; wrap.style.color = '#888'; }
+      showPlaceholder();
+    }
     tile.appendChild(wrap);
 
     // Teksty
