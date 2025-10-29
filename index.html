@@ -92,6 +92,11 @@
 
   // ===== POMOCNICZE: budowa URL =====
   const csvExportUrl = (gid) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv${gid!=null?`&gid=${gid}`:''}`;
+  // Stabilniejszy wariant: wybór arkusza po TYTULE (bez gid)
+  const csvExportUrlByTitle = (title) => {
+    const enc = encodeURIComponent(title);
+    return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&sheet=${enc}`;
+  };
 
   // ===== Auto‑wykrywanie GID po tytule zakładki =====
   // Wykorzystuje nieudokumentowany, ale stabilny JSON z listą arkuszy.
@@ -191,10 +196,9 @@
 
   async function fetchDataForMedium(medium){
     if(cacheByMedium[medium]) return cacheByMedium[medium];
-    // Nazwa zakładki w arkuszu = tytuł zakładki Google Sheets
     const sheetTitle = medium === 'kompakty' ? 'Kompakty' : 'Kasety';
-    const gid = await resolveGidByTitle(sheetTitle);
-    const url = csvExportUrl(gid);
+    // Zamiast kombinować z gid, pobieramy CSV po nazwie arkusza
+    const url = csvExportUrlByTitle(sheetTitle);
     const resp = await fetch(url, {cache:'no-store'});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const txt = await resp.text();
