@@ -275,24 +275,42 @@
     const imgBox = document.createElement('div');
     imgBox.className = 'thumbnail-image';
 
+    const isColorBlack = (s) => {
+      if(!s) return false;
+      const str = s.trim().toLowerCase();
+      if (str === 'black' || str === '#000' || str === '#000000' || str.includes('czarn')) return true;
+      const hex = str.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+      if (hex) {
+        let h = hex[1];
+        if (h.length === 3) h = h.split('').map(ch=>ch+ch).join('');
+        const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+        const lum = (0.2126*r + 0.7152*g + 0.0722*b)/255;
+        return lum < 0.05;
+      }
+      const rgb = str.match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (rgb) {
+        const r = +rgb[1], g = +rgb[2], b = +rgb[3];
+        const lum = (0.2126*r + 0.7152*g + 0.0722*b)/255;
+        return lum < 0.05;
+      }
+      return false;
+    };
+
+    const isBgBlack = isColorBlack(bg);
+
     const showEmptyBlack = () => { wrap.style.background = '#000'; wrap.appendChild(imgBox); };
     const showQuestion   = () => { imgBox.innerHTML = '<p><strong>?</strong></p>'; wrap.appendChild(imgBox); };
 
     if(miniatura){
-      // Preflight ładowanie obrazka, żeby NIE wstawiać <img> przy błędzie
+      // Preflight: sprawdź, czy obrazek się ładuje; nie dodawaj <img> przy błędzie
       const testImg = new Image();
       testImg.loading = 'lazy';
       testImg.referrerPolicy = 'no-referrer';
-      testImg.onload = () => {
-        imgBox.appendChild(testImg);
-        wrap.appendChild(imgBox);
-      };
-      testImg.onerror = () => {
-        if(bg==='#000000') showEmptyBlack(); else showQuestion();
-      };
+      testImg.onload = () => { imgBox.appendChild(testImg); wrap.appendChild(imgBox); };
+      testImg.onerror = () => { if (isBgBlack) showEmptyBlack(); else showQuestion(); };
       testImg.src = miniatura;
     } else {
-      if(bg==='#000000') showEmptyBlack(); else showQuestion();
+      if (isBgBlack) showEmptyBlack(); else showQuestion();
     }
     tile.appendChild(wrap);
 
