@@ -275,29 +275,24 @@
     const imgBox = document.createElement('div');
     imgBox.className = 'thumbnail-image';
 
+    const showEmptyBlack = () => { wrap.style.background = '#000'; wrap.appendChild(imgBox); };
+    const showQuestion   = () => { imgBox.innerHTML = '<p><strong>?</strong></p>'; wrap.appendChild(imgBox); };
+
     if(miniatura){
-      const img = document.createElement('img');
-      img.loading='lazy';
-      img.src = miniatura;
-      img.onerror = () => {
-        if(bg==='#000000'){
-          wrap.style.background = '#000';
-          wrap.appendChild(imgBox);
-        } else {
-          imgBox.innerHTML = '<p><strong>?</strong></p>';
-          wrap.appendChild(imgBox);
-        }
+      // Preflight ładowanie obrazka, żeby NIE wstawiać <img> przy błędzie
+      const testImg = new Image();
+      testImg.loading = 'lazy';
+      testImg.referrerPolicy = 'no-referrer';
+      testImg.onload = () => {
+        imgBox.appendChild(testImg);
+        wrap.appendChild(imgBox);
       };
-      imgBox.appendChild(img);
-      wrap.appendChild(imgBox);
+      testImg.onerror = () => {
+        if(bg==='#000000') showEmptyBlack(); else showQuestion();
+      };
+      testImg.src = miniatura;
     } else {
-      if(bg==='#000000'){
-        wrap.style.background = '#000';
-        wrap.appendChild(imgBox);
-      } else {
-        imgBox.innerHTML = '<p><strong>?</strong></p>';
-        wrap.appendChild(imgBox);
-      }
+      if(bg==='#000000') showEmptyBlack(); else showQuestion();
     }
     tile.appendChild(wrap);
 
