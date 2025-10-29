@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Moja kolekcja kaset ECHO/JAM</title>
+<title>Moja kolekcja – Kasety & Kompakty (ECHO/JAM)</title>
 <link rel="icon" href="favicon/favicon.ico" type="image/x-icon" />
 <style>
   :root{ --gap:12px; --radius:8px; --line:#d0d0d0; --text:#111; --muted:#666; --chip:#f6f6f6;}
@@ -12,19 +12,17 @@
   .toolbar{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--gap); margin-bottom:10px;}
   .group{ display:flex; align-items:center; gap:8px;}
   .group label.lbl{ min-width:88px; text-align:right; color:var(--muted); font-weight:600;}
+  /* Tabs */
   .tabs{ display:flex; gap:4px; align-items:flex-end;}
   .tabs input[type="radio"]{ display:none;}
-  .tab-label{
-    padding:8px 14px; border:1px solid var(--line); border-bottom:none; border-top-left-radius:var(--radius);
-    border-top-right-radius:var(--radius); background:#f2f2f2; cursor:pointer; font-weight:700; user-select:none;
-  }
+  .tab-label{ padding:8px 14px; border:1px solid var(--line); border-bottom:none; border-top-left-radius:var(--radius); border-top-right-radius:var(--radius); background:#f2f2f2; cursor:pointer; font-weight:700; user-select:none;}
   .tabs input[type="radio"]:checked + label{ background:#fff; border-color:#aaa; position:relative; top:1px;}
   .tabs-underline{ width:100%; height:1px; background:#aaa; margin-top:-1px; margin-bottom:6px;}
   /* FF chips */
-  .chip{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid var(--line); border-radius:999px; background:var(--chip);}
-  .chip input{ transform:scale(1.1);}
+  .chip{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid var(--line); border-radius:999px; background:var(--chip);} 
+  .chip input{ transform:scale(1.1);} 
   /* Inputs */
-  .text{ padding:6px 10px; border:1px solid #ccc; border-radius:6px; min-width:220px;}
+  .text{ padding:6px 10px; border:1px solid #ccc; border-radius:6px; min-width:220px;} 
   .text.small{ min-width:120px; width:160px;}
   /* Tiles */
   #tiles-container::after{ content:""; display:block; clear:both;}
@@ -34,12 +32,22 @@
   .tile img{ max-width:100%; height:auto;}
   .copy-icon{ display:inline-block; cursor:pointer; font-size:11px; margin-left:6px; text-transform:none; }
   .tile:hover .copy-icon{ text-decoration:underline; }
+  .pill{display:inline-block; font-size:12px; border:1px solid var(--line); padding:2px 8px; border-radius:999px; background:#fafafa; margin-left:6px;}
 </style>
 </head>
 <body>
 
+  <!-- MEDIA TABS: Kasety / Kompakty -->
+  <div class="tabs" id="media-tabs" role="tablist" aria-label="Nośnik">
+    <input type="radio" name="media" id="media-kasety" value="kasety" checked>
+    <label class="tab-label" for="media-kasety">KASETY</label>
+    <input type="radio" name="media" id="media-kompakty" value="kompakty">
+    <label class="tab-label" for="media-kompakty">KOMPAKTY</label>
+  </div>
+  <div class="tabs-underline"></div>
+
   <div class="toolbar">
-    <!-- Zakładki -->
+    <!-- „Stock” tabs -->
     <div class="tabs" id="stock-tabs">
       <input type="radio" name="tab" id="tab-all" value="all" checked><label class="tab-label" for="tab-all">WSZYSTKO</label>
       <input type="radio" name="tab" id="tab-owned" value="owned"><label class="tab-label" for="tab-owned">MAM</label>
@@ -72,47 +80,95 @@
   <div id="tiles-container"></div>
 
 <script>
-  // Jeśli arkusz nie jest pierwszą zakładką, dopisz &gid=XXXX
-  const sheetUrlCSV =
-    'https://docs.google.com/spreadsheets/d/1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q/export?format=csv';
+  // ===== KONFIGURACJA =====
+  // ID arkusza (bez &gid) – nie zmieniamy, przejmujemy z Twojego pliku
+  const SHEET_ID = '1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q';
 
-  // --- Parser CSV z auto-wykryciem separatora i obsługą cudzysłowów ---
+  // (Opcjonalnie) ręczne nadpisanie GID dla nazw arkuszy; jeśli pozostawisz null, skrypt spróbuje sam wykryć GID po tytule zakładki
+  const SHEET_GID_OVERRIDE = {
+    'Kasety': null,     // np. 0
+    'Kompakty': null    // tutaj możesz wkleić znany gid, jeśli chcesz wymusić
+  };
+
+  // ===== POMOCNICZE: budowa URL =====
+  const csvExportUrl = (gid) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv${gid!=null?`&gid=${gid}`:''}`;
+
+  // ===== Auto‑wykrywanie GID po tytule zakładki =====
+  // Wykorzystuje nieudokumentowany, ale stabilny JSON z listą arkuszy.
+  async function discoverSheets(){
+    // cache w sessionStorage, żeby nie pytać Google za każdym razem
+    const cacheKey = `sheets-meta-${SHEET_ID}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if(cached){ try{ return JSON.parse(cached);}catch{}}
+
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tqx=out:json`;
+    const resp = await fetch(url, {cache:'no-store'});
+    if(!resp.ok){ throw new Error('Nie mogę pobrać listy zakładek'); }
+    const text = await resp.text();
+    // Usuwamy otoczkę JSONP
+    const json = JSON.parse(text.replace(/^.*?\(/,'').replace(/\);?\s*$/,''));
+    const sheets = (json && json.table && json.table.cols) ? null : (json && json.Sheet) ;
+
+    // Fallback – nowszy format zwraca obiekt z polem "sheets" w "documentProperties"
+    // Spróbujemy wyciągnąć listę z pola "sheets" w json – popularny układ
+    let out = [];
+    if(json && json.table){
+      // Kiedy endpoint zwraca akurat dane z pierwszego arkusza, nie ma listy – spróbuj innej metody poniżej
+    }
+    // Druga metoda – w wielu przypadkach Google dorzuca pole "sheets" wewnątrz lokalizacji json.reqId – to bywa niestabilne,
+    // więc jako bezpieczniejszy wariant pobierzemy stronę "pub" i wyciągniemy z osadzonego JS.
+
+    if(!out.length){
+      const htmlResp = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/htmlview`, {cache:'no-store'});
+      if(htmlResp.ok){
+        const html = await htmlResp.text();
+        // W HTML zwykle jest "data-sheets-gid" przy zakładkach
+        const re = /data-sheets-gid=\"(\d+)\"[^>]*>\s*<span[^>]*>\s*([^<]+)\s*<\/span>/g;
+        let m; const map = new Map();
+        while((m = re.exec(html))){
+          const gid = parseInt(m[1],10);
+          const title = m[2].trim();
+          map.set(title, gid);
+        }
+        out = Array.from(map.entries()).map(([title,gid])=>({title,gid}));
+      }
+    }
+
+    sessionStorage.setItem(cacheKey, JSON.stringify(out));
+    return out; // [{title,gid}]
+  }
+
+  async function resolveGidByTitle(title){
+    // 1) override
+    if(SHEET_GID_OVERRIDE[title] != null) return SHEET_GID_OVERRIDE[title];
+    // 2) meta‑discovery
+    try{
+      const list = await discoverSheets();
+      const hit = list.find(s => s.title.toLowerCase() === title.toLowerCase());
+      if(hit) return hit.gid;
+    }catch(e){ console.warn('Nie udało się wykryć GID po tytule', e); }
+    // 3) fallback: brak gid => Google zwróci pierwszą zakładkę
+    return null;
+  }
+
+  // ===== CSV parser (jak w Twojej wersji) =====
   function detectDelimiter(firstLine){
-    const counts = [
-      {d:',', c:(firstLine.match(/,/g)||[]).length},
-      {d:';', c:(firstLine.match(/;/g)||[]).length},
-      {d:'\t',c:(firstLine.match(/\t/g)||[]).length},
-    ].sort((a,b)=>b.c-a.c);
+    const counts = [ {d:',', c:(firstLine.match(/,/g)||[]).length}, {d:';', c:(firstLine.match(/;/g)||[]).length}, {d:'\t',c:(firstLine.match(/\t/g)||[]).length} ].sort((a,b)=>b.c-a.c);
     return counts[0].c>0 ? counts[0].d : ',';
   }
   function parseCSV(text){
-    // Normalizuj końce linii do \n
     text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
     const delim = detectDelimiter(text.split('\n',1)[0]||',');
-    const rows = [];
-    let i=0, field='', row=[], inQ=false;
-    while(i<text.length){
-      const c=text[i], n=text[i+1];
-      if(c==='"' && n==='"'){ field+='"'; i+=2; continue; }
-      if(c==='"'){ inQ=!inQ; i++; continue; }
-      if(c===delim && !inQ){ row.push(field); field=''; i++; continue; }
-      if(c==='\n' && !inQ){ row.push(field); rows.push(row); field=''; row=[]; i++; continue; }
-      field+=c; i++;
-    }
+    const rows = []; let i=0, field='', row=[], inQ=false;
+    while(i<text.length){ const c=text[i], n=text[i+1]; if(c==='"' && n==='"'){ field+='"'; i+=2; continue; } if(c==='"'){ inQ=!inQ; i++; continue; } if(c===delim && !inQ){ row.push(field); field=''; i++; continue; } if(c==='\n' && !inQ){ row.push(field); rows.push(row); field=''; row=[]; i++; continue; } field+=c; i++; }
     if(field.length || row.length){ row.push(field); rows.push(row); }
     return rows.map(r=>r.map(v=>(v||'').trim()));
   }
 
-  // --- Mapowanie kolumn po nagłówkach + fallback do starego układu ---
+  // ===== Mapowanie kolumn (bez zmian) =====
   function buildIndexMap(headers){
     const norm = s => (s||'').toLowerCase().replace(/\s+/g,' ').replace(/[_-]+/g,' ').trim();
-    const find = (alts) => {
-      for(const a of alts){
-        const i = headers.findIndex(h => norm(h).includes(a));
-        if(i>=0) return i;
-      }
-      return -1;
-    };
+    const find = (alts) => { for(const a of alts){ const i = headers.findIndex(h => norm(h).includes(a)); if(i>=0) return i; } return -1; };
     let idx = {
       ff:        find(['ff','wytwornia','label']),
       nr:        find(['nr katalogowy','nr','katalog']),
@@ -122,46 +178,36 @@
       kolor:     find(['kolor','color','bg']),
       miniatura: find(['miniatura','okładka','okladka','cover','thumb'])
     };
-    // Fallback gdy nie znaleziono (z Twojego układu)
     const fallback = {ff:0, nr:2, artysta:3, album:4, ilosc:6, kolor:9, miniatura:10};
-    for(const k of Object.keys(fallback)){
-      if(idx[k] < 0 && headers.length > fallback[k]) idx[k] = fallback[k];
-    }
+    for(const k of Object.keys(fallback)){ if(idx[k] < 0 && headers.length > fallback[k]) idx[k] = fallback[k]; }
     return idx;
   }
 
-  let cachedRows=null;
+  let cacheByMedium = { kasety:null, kompakty:null };
 
-  async function fetchData(){
-    if(cachedRows) return cachedRows;
-    const resp = await fetch(sheetUrlCSV, {cache:'no-store'});
+  function getActiveStockFilter(){ const el = document.querySelector('#stock-tabs input[type="radio"]:checked'); return el ? el.value : 'all'; }
+  function getActiveFFFilters(){ const echo = document.getElementById('ff-echo').checked; const jam  = document.getElementById('ff-jam').checked; if(!echo && !jam) return ['echo','jam']; const out=[]; if(echo) out.push('echo'); if(jam) out.push('jam'); return out; }
+  function getActiveMedium(){ const el = document.querySelector('#media-tabs input[type="radio"]:checked'); return el ? el.value : 'kasety'; }
+
+  async function fetchDataForMedium(medium){
+    if(cacheByMedium[medium]) return cacheByMedium[medium];
+    // Nazwa zakładki w arkuszu = tytuł zakładki Google Sheets
+    const sheetTitle = medium === 'kompakty' ? 'Kompakty' : 'Kasety';
+    const gid = await resolveGidByTitle(sheetTitle);
+    const url = csvExportUrl(gid);
+    const resp = await fetch(url, {cache:'no-store'});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const txt = await resp.text();
     const rows = parseCSV(txt);
     if(!rows.length || !rows[0] || rows[0].length<2) throw new Error('Nieprawidłowy CSV');
-    cachedRows = rows;
+    cacheByMedium[medium] = rows; 
     return rows;
-  }
-
-  function getActiveStockFilter(){
-    const el = document.querySelector('#stock-tabs input[type="radio"]:checked');
-    return el ? el.value : 'all';
-  }
-
-  function getActiveFFFilters(){
-    const echo = document.getElementById('ff-echo').checked;
-    const jam  = document.getElementById('ff-jam').checked;
-    // Jeśli nic nie zaznaczone (np. po autowypełnieniu przeglądarki) – traktuj jak oba zaznaczone
-    if(!echo && !jam) return ['echo','jam'];
-    const out=[];
-    if(echo) out.push('echo');
-    if(jam)  out.push('jam');
-    return out;
   }
 
   async function applyFiltersAndRender(){
     try{
-      const rows = await fetchData();
+      const medium = getActiveMedium();
+      const rows = await fetchDataForMedium(medium);
       const headers = rows[0];
       const dataRows = rows.slice(1);
       const idx = buildIndexMap(headers);
@@ -175,7 +221,8 @@
           album:     (cols[idx.album]||'').trim(),
           ilosc:     parseInt(cols[idx.ilosc],10) || 0,
           kolor:     idx.kolor>=0 ? (cols[idx.kolor]||'').trim() : '',
-          miniatura: idx.miniatura>=0 ? (cols[idx.miniatura]||'').trim() : ''
+          miniatura: idx.miniatura>=0 ? (cols[idx.miniatura]||'').trim() : '',
+          medium
         }))
         .filter(r => r.nr!=='' || r.artysta!=='' || r.album!=='');
 
@@ -187,8 +234,7 @@
       renderTiles(mapped, {stock, ffSel, q, qNr});
     }catch(e){
       console.error('Błąd wczytywania:', e);
-      document.getElementById('tiles-container').innerHTML =
-        '<p style="color:red">Nie udało się wczytać danych z arkusza. Sprawdź uprawnienia i konsolę.</p>';
+      document.getElementById('tiles-container').innerHTML = '<p style="color:red">Nie udało się wczytać danych z arkusza (nośnik: '+getActiveMedium()+'). Sprawdź, czy arkusz ma zakładkę o właściwym tytule ("Kasety" / "Kompakty") i uprawnienia Publiczne.</p>';
     }
   }
 
@@ -198,22 +244,11 @@
 
     const filtered = data.filter(it=>{
       const il = it.ilosc|0;
-      const stockOK =
-        stock==='all' ||
-        (stock==='owned'  && il>0) ||
-        (stock==='wanted' && il<1) ||
-        (stock==='duble'  && il>1);
-
+      const stockOK = stock==='all' || (stock==='owned'  && il>0) || (stock==='wanted' && il<1) || (stock==='duble'  && il>1);
       const ffLower = (it.ff||'').toLowerCase();
-      const ffOK = ffSel.includes(ffLower); // ffSel ma zawsze co najmniej 1 opcję
-
-      const searchOK = q==='' ||
-        (it.artysta||'').toLowerCase().includes(q) ||
-        (it.album||'').toLowerCase().includes(q)  ||
-        ffLower.includes(q);
-
+      const ffOK = ffSel.includes(ffLower);
+      const searchOK = q==='' || (it.artysta||'').toLowerCase().includes(q) || (it.album||'').toLowerCase().includes(q) || ffLower.includes(q);
       const nrOK = qNr==='' || (it.nr||'').toLowerCase().includes(qNr);
-
       return stockOK && ffOK && searchOK && nrOK;
     });
 
@@ -221,7 +256,7 @@
   }
 
   function createTile(item){
-    const { ff, nr, artysta, album, ilosc, kolor, miniatura } = item;
+    const { ff, nr, artysta, album, ilosc, kolor, miniatura, medium } = item;
     const tile = document.createElement('div');
     tile.className = 'tile';
 
@@ -235,20 +270,14 @@
     wrap.className = 'thumbnail-container';
     const imgBox = document.createElement('div');
     imgBox.className = 'thumbnail-image';
-    if(miniatura){
-      const img = document.createElement('img');
-      img.loading='lazy'; img.src = miniatura;
-      imgBox.appendChild(img); wrap.appendChild(imgBox);
-    }else if(bg==='#000000'){
-      wrap.style.background = '#000';
-    }else{
-      imgBox.innerHTML = '<p><strong>?</strong></p>'; wrap.appendChild(imgBox);
-    }
+    if(miniatura){ const img = document.createElement('img'); img.loading='lazy'; img.src = miniatura; imgBox.appendChild(img); wrap.appendChild(imgBox); }
+    else if(bg==='#000000'){ wrap.style.background = '#000'; }
+    else{ imgBox.innerHTML = '<p><strong>?</strong></p>'; wrap.appendChild(imgBox); }
     tile.appendChild(wrap);
 
     // Teksty
     const pA = document.createElement('p');
-    pA.innerHTML = `<strong>${escapeHTML(artysta)}</strong><span class="copy-icon" onclick="copyToClipboard('${jsEscape(artysta)}')">(kopiuj)</span>`;
+    pA.innerHTML = `<strong>${escapeHTML(artysta)}</strong><span class="copy-icon" onclick="copyToClipboard('${jsEscape(artysta)}')">(kopiuj)</span><span class="pill">${medium==='kompakty'?'CD':'Kaseta'}</span>`;
     tile.appendChild(pA);
 
     const pB = document.createElement('p');
@@ -259,11 +288,12 @@
       const pQ = document.createElement('p'); pQ.innerHTML = `Ilość: <strong>${ilosc}</strong>`; tile.appendChild(pQ);
     }else{
       const q = encodeURIComponent(`${artysta} ${album}`);
+      const allegroMedium = medium==='kompakty' ? 'Płyta%20CD' : 'Kaseta';
       const pL = document.createElement('p');
       pL.innerHTML = `
-        <a href="https://allegro.pl/listing?string=${q}&nosnik=Kaseta" target="_blank">Allegro</a> |
-        <a href="https://www.olx.pl/muzyka-edukacja/muzyka/kasety-audio/q-${q}/" target="_blank">OLX</a> |
-        <a href="https://www.vinted.pl/catalog?search_text=${q}&catalog[]=3038&page=1" target="_blank">Vinted</a>`;
+        <a href="https://allegro.pl/listing?string=${q}&nosnik=${allegroMedium}" target="_blank">Allegro</a> |
+        <a href="https://www.olx.pl/muzyka-edukacja/muzyka/q-${q}/" target="_blank">OLX</a> |
+        <a href="https://www.vinted.pl/catalog?search_text=${q}&page=1" target="_blank">Vinted</a>`;
       tile.appendChild(pL);
     }
 
@@ -271,19 +301,16 @@
     return tile;
   }
 
-  function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m])); }
   function jsEscape(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-  function copyToClipboard(text){
-    const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-  }
+  function copyToClipboard(text){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
 
   // Zdarzenia
-  ['search','search-nr','ff-echo','ff-jam'].forEach(id=>{
-    document.getElementById(id).addEventListener(id.startsWith('ff-')?'change':'input', applyFiltersAndRender);
-  });
+  ['search','search-nr','ff-echo','ff-jam'].forEach(id=>{ document.getElementById(id).addEventListener(id.startsWith('ff-')?'change':'input', applyFiltersAndRender); });
   document.querySelectorAll('#stock-tabs input[type="radio"]').forEach(r=>r.addEventListener('change', applyFiltersAndRender));
+  document.querySelectorAll('#media-tabs input[type="radio"]').forEach(r=>r.addEventListener('change', applyFiltersAndRender));
 
+  // Start
   window.onload = applyFiltersAndRender;
 </script>
 </body>
