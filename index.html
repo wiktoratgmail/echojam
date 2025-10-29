@@ -270,49 +270,63 @@
     tile.style.border = ilosc===0 ? '5px solid red' : '5px solid #ddd';
 
     // Miniatura
-    const wrap = document.createElement('div');
-    wrap.className = 'thumbnail-container';
-    const imgBox = document.createElement('div');
-    imgBox.className = 'thumbnail-image';
+const wrap = document.createElement('div');
+wrap.className = 'thumbnail-container';
+const imgBox = document.createElement('div');
+imgBox.className = 'thumbnail-image';
 
-    const isColorBlack = (s) => {
-      if(!s) return false;
-      const str = s.trim().toLowerCase();
-      if (str === 'black' || str === '#000' || str === '#000000' || str.includes('czarn')) return true;
-      const hex = str.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-      if (hex) {
-        let h = hex[1];
-        if (h.length === 3) h = h.split('').map(ch=>ch+ch).join('');
-        const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
-        const lum = (0.2126*r + 0.7152*g + 0.0722*b)/255;
-        return lum < 0.05;
-      }
-      const rgb = str.match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-      if (rgb) {
-        const r = +rgb[1], g = +rgb[2], b = +rgb[3];
-        const lum = (0.2126*r + 0.7152*g + 0.0722*b)/255;
-        return lum < 0.05;
-      }
-      return false;
-    };
+const isColorBlack = (s) => {
+  if(!s) return false;
+  const str = s.trim().toLowerCase();
+  if (str === 'black' || str === '#000' || str === '#000000' || str.includes('czarn')) return true;
+  const hex = str.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3) h = h.split('').map(ch=>ch+ch).join('');
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+    const lum = (0.2126*r + 0.7152*g + 0.0722*b)/255;
+    return lum < 0.05;
+  }
+  const rgb = str.match(/^rgba?\\((\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);
+  if (rgb) {
+    const r = +rgb[1], g = +rgb[2], b = +rgb[3];
+    const lum = (0.2126*r + 0.7152*g + 0.0722*b)/255;
+    return lum < 0.05;
+  }
+  return false;
+};
 
-    const isBgBlack = isColorBlack(bg);
+const isBgBlack = isColorBlack(bg);
 
-    const showEmptyBlack = () => { wrap.style.background = '#000'; wrap.appendChild(imgBox); };
-    const showQuestion   = () => { imgBox.innerHTML = '<p><strong>?</strong></p>'; wrap.appendChild(imgBox); };
-
-    if(miniatura){
-      // Preflight: sprawdź, czy obrazek się ładuje; nie dodawaj <img> przy błędzie
-      const testImg = new Image();
-      testImg.loading = 'lazy';
-      testImg.referrerPolicy = 'no-referrer';
-      testImg.onload = () => { imgBox.appendChild(testImg); wrap.appendChild(imgBox); };
-      testImg.onerror = () => { if (isBgBlack) showEmptyBlack(); else showQuestion(); };
-      testImg.src = miniatura;
+// --- poprawione zachowanie ---
+if (miniatura && miniatura.trim() !== '') {
+  const img = document.createElement('img');
+  img.loading = 'lazy';
+  img.src = miniatura;
+  img.onerror = () => {
+    // jeśli nie udało się wczytać obrazka
+    img.remove(); // usuń niedziałający <img>
+    if (isBgBlack) {
+      wrap.style.background = '#000';
+      wrap.appendChild(imgBox);
     } else {
-      if (isBgBlack) showEmptyBlack(); else showQuestion();
+      imgBox.innerHTML = '<p><strong>?</strong></p>';
+      wrap.appendChild(imgBox);
     }
-    tile.appendChild(wrap);
+  };
+  imgBox.appendChild(img);
+  wrap.appendChild(imgBox);
+} else {
+  // brak miniatury
+  if (isBgBlack) {
+    wrap.style.background = '#000';
+    wrap.appendChild(imgBox);
+  } else {
+    imgBox.innerHTML = '<p><strong>?</strong></p>';
+    wrap.appendChild(imgBox);
+  }
+}
+tile.appendChild(wrap);
 
     // Teksty
     const pA = document.createElement('p');
