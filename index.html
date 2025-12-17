@@ -288,9 +288,9 @@
       imgBox.appendChild(img);
       wrap.appendChild(imgBox);
     } else {
-      // Brak miniatury – zawsze pokazuj znak zapytania, nawet dla czarnego tła
+      // Brak miniatury pokazuj znak zapytania, nie dla czarnego tła
       if(bg==='#000000'){ wrap.style.background = '#000'; wrap.style.color = '#888'; }
-      showPlaceholder();
+     // showPlaceholder();
     }
     tile.appendChild(wrap);
 
