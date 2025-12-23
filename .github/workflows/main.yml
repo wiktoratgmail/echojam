@@ -3,6 +3,9 @@ on:
   push:
     branches: [gh-pages]
 
+permissions:
+  contents: write  # Kluczowe dla pusha do repozytorium [web:43][web:45][attached_file:1]
+
 jobs:
   update-images:
     runs-on: ubuntu-latest
@@ -12,7 +15,8 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         ref: gh-pages
-      
+        fetch-depth: 0  # Pozwala na historię commitów [web:49]
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -25,11 +29,15 @@ jobs:
         
     - name: Run script to update images
       run: python scripts/update_images.py
-      
+
     - name: Commit and push changes
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add img
-        git commit -m "Update images [skip ci]" || echo "No changes to commit"
-        git push
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add img/ || echo "No images to add"
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Update images [skip ci] $(date -u)"
+          git push origin gh-pages
+        fi [web:7][web:49][attached_file:1]
