@@ -4,7 +4,7 @@ on:
     branches: [gh-pages]
 
 permissions:
-  contents: write  # Kluczowe dla pusha do repozytorium [web:43][web:45][attached_file:1]
+  contents: write
 
 jobs:
   update-images:
@@ -15,7 +15,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         ref: gh-pages
-        fetch-depth: 0  # Pozwala na historię commitów [web:49]
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -40,4 +40,4 @@ jobs:
         else
           git commit -m "Update images [skip ci] $(date -u)"
           git push origin gh-pages
-        fi [web:7][web:49][attached_file:1]
+        fi
