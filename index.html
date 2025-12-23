@@ -297,7 +297,7 @@
       tile.appendChild(pQ);
     }
     
-    if (ilosc===0 || album ==='?'){
+    if (ilosc===0 && album !='?'){
       const q = encodeURIComponent(`${artysta} ${album}`);
       const allegroMedium = medium==='kompakty' ? 'Płyta%20CD' : 'Kaseta';
       const pL = document.createElement('p');
