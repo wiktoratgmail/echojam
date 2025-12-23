@@ -47,7 +47,7 @@
   <div class="tabs-underline"></div>
 
   <div class="toolbar">
-    <!-- „Stock” tabs -->
+    <!-- „Stock" tabs -->
     <div class="tabs" id="stock-tabs">
       <input type="radio" name="tab" id="tab-all" value="all" checked><label class="tab-label" for="tab-all">WSZYSTKO</label>
       <input type="radio" name="tab" id="tab-owned" value="owned"><label class="tab-label" for="tab-owned">MAM</label>
@@ -81,99 +81,55 @@
 
 <script>
   // ===== KONFIGURACJA =====
-  // ID arkusza (bez &gid) – nie zmieniamy, przejmujemy z Twojego pliku
   const SHEET_ID = '1hTaNoVxeK5HBXI7FHMMPKznvILbudUpxgRslYouw34Q';
-
-  // (Opcjonalnie) ręczne nadpisanie GID dla nazw arkuszy; jeśli pozostawisz null, skrypt spróbuje sam wykryć GID po tytule zakładki
   const SHEET_GID_OVERRIDE = {
-    'Kasety': null,     // np. 0
-    'Kompakty': null    // tutaj możesz wkleić znany gid, jeśli chcesz wymusić
+    'Kasety': null,
+    'Kompakty': null
   };
 
   // ===== POMOCNICZE: budowa URL =====
-  const csvExportUrl = (gid) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv${gid!=null?`&gid=${gid}`:''}`;
-  // Stabilniejszy wariant: wybór arkusza po TYTULE (bez gid)
   const csvExportUrlByTitle = (title) => {
     const enc = encodeURIComponent(title);
     return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&sheet=${enc}`;
   };
 
-  // ===== Auto‑wykrywanie GID po tytule zakładki =====
-  // Wykorzystuje nieudokumentowany, ale stabilny JSON z listą arkuszy.
-  async function discoverSheets(){
-    // cache w sessionStorage, żeby nie pytać Google za każdym razem
-    const cacheKey = `sheets-meta-${SHEET_ID}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if(cached){ try{ return JSON.parse(cached);}catch{}}
-
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tqx=out:json`;
-    const resp = await fetch(url, {cache:'no-store'});
-    if(!resp.ok){ throw new Error('Nie mogę pobrać listy zakładek'); }
-    const text = await resp.text();
-    // Usuwamy otoczkę JSONP
-    const json = JSON.parse(text.replace(/^.*?\(/,'').replace(/\);?\s*$/,''));
-    const sheets = (json && json.table && json.table.cols) ? null : (json && json.Sheet) ;
-
-    // Fallback – nowszy format zwraca obiekt z polem "sheets" w "documentProperties"
-    // Spróbujemy wyciągnąć listę z pola "sheets" w json – popularny układ
-    let out = [];
-    if(json && json.table){
-      // Kiedy endpoint zwraca akurat dane z pierwszego arkusza, nie ma listy – spróbuj innej metody poniżej
-    }
-    // Druga metoda – w wielu przypadkach Google dorzuca pole "sheets" wewnątrz lokalizacji json.reqId – to bywa niestabilne,
-    // więc jako bezpieczniejszy wariant pobierzemy stronę "pub" i wyciągniemy z osadzonego JS.
-
-    if(!out.length){
-      const htmlResp = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/htmlview`, {cache:'no-store'});
-      if(htmlResp.ok){
-        const html = await htmlResp.text();
-        // W HTML zwykle jest "data-sheets-gid" przy zakładkach
-        const re = /data-sheets-gid=\"(\d+)\"[^>]*>\s*<span[^>]*>\s*([^<]+)\s*<\/span>/g;
-        let m; const map = new Map();
-        while((m = re.exec(html))){
-          const gid = parseInt(m[1],10);
-          const title = m[2].trim();
-          map.set(title, gid);
-        }
-        out = Array.from(map.entries()).map(([title,gid])=>({title,gid}));
-      }
-    }
-
-    sessionStorage.setItem(cacheKey, JSON.stringify(out));
-    return out; // [{title,gid}]
-  }
-
-  async function resolveGidByTitle(title){
-    // 1) override
-    if(SHEET_GID_OVERRIDE[title] != null) return SHEET_GID_OVERRIDE[title];
-    // 2) meta‑discovery
-    try{
-      const list = await discoverSheets();
-      const hit = list.find(s => s.title.toLowerCase() === title.toLowerCase());
-      if(hit) return hit.gid;
-    }catch(e){ console.warn('Nie udało się wykryć GID po tytule', e); }
-    // 3) fallback: brak gid => Google zwróci pierwszą zakładkę
-    return null;
-  }
-
-  // ===== CSV parser (jak w Twojej wersji) =====
+  // ===== CSV parser =====
   function detectDelimiter(firstLine){
-    const counts = [ {d:',', c:(firstLine.match(/,/g)||[]).length}, {d:';', c:(firstLine.match(/;/g)||[]).length}, {d:'\t',c:(firstLine.match(/\t/g)||[]).length} ].sort((a,b)=>b.c-a.c);
+    const counts = [ 
+      {d:',', c:(firstLine.match(/,/g)||[]).length}, 
+      {d:';', c:(firstLine.match(/;/g)||[]).length}, 
+      {d:'\t',c:(firstLine.match(/\t/g)||[]).length} 
+    ].sort((a,b)=>b.c-a.c);
     return counts[0].c>0 ? counts[0].d : ',';
   }
+  
   function parseCSV(text){
     text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
     const delim = detectDelimiter(text.split('\n',1)[0]||',');
-    const rows = []; let i=0, field='', row=[], inQ=false;
-    while(i<text.length){ const c=text[i], n=text[i+1]; if(c==='"' && n==='"'){ field+='"'; i+=2; continue; } if(c==='"'){ inQ=!inQ; i++; continue; } if(c===delim && !inQ){ row.push(field); field=''; i++; continue; } if(c==='\n' && !inQ){ row.push(field); rows.push(row); field=''; row=[]; i++; continue; } field+=c; i++; }
+    const rows = []; 
+    let i=0, field='', row=[], inQ=false;
+    while(i<text.length){ 
+      const c=text[i], n=text[i+1]; 
+      if(c==='"' && n==='"'){ field+='"'; i+=2; continue; } 
+      if(c==='"'){ inQ=!inQ; i++; continue; } 
+      if(c===delim && !inQ){ row.push(field); field=''; i++; continue; } 
+      if(c==='\n' && !inQ){ row.push(field); rows.push(row); field=''; row=[]; i++; continue; } 
+      field+=c; i++; 
+    }
     if(field.length || row.length){ row.push(field); rows.push(row); }
     return rows.map(r=>r.map(v=>(v||'').trim()));
   }
 
-  // ===== Mapowanie kolumn (bez zmian) =====
+  // ===== Mapowanie kolumn =====
   function buildIndexMap(headers){
     const norm = s => (s||'').toLowerCase().replace(/\s+/g,' ').replace(/[_-]+/g,' ').trim();
-    const find = (alts) => { for(const a of alts){ const i = headers.findIndex(h => norm(h).includes(a)); if(i>=0) return i; } return -1; };
+    const find = (alts) => { 
+      for(const a of alts){ 
+        const i = headers.findIndex(h => norm(h).includes(a)); 
+        if(i>=0) return i; 
+      } 
+      return -1; 
+    };
     let idx = {
       ff:        find(['ff','wytwornia','label']),
       nr:        find(['nr katalogowy','nr','katalog']),
@@ -184,20 +140,37 @@
       miniatura: find(['miniatura','okładka','okladka','cover','thumb'])
     };
     const fallback = {ff:0, nr:2, artysta:3, album:4, ilosc:6, kolor:9, miniatura:10};
-    for(const k of Object.keys(fallback)){ if(idx[k] < 0 && headers.length > fallback[k]) idx[k] = fallback[k]; }
+    for(const k of Object.keys(fallback)){ 
+      if(idx[k] < 0 && headers.length > fallback[k]) idx[k] = fallback[k]; 
+    }
     return idx;
   }
 
   let cacheByMedium = { kasety:null, kompakty:null };
 
-  function getActiveStockFilter(){ const el = document.querySelector('#stock-tabs input[type="radio"]:checked'); return el ? el.value : 'all'; }
-  function getActiveFFFilters(){ const echo = document.getElementById('ff-echo').checked; const jam  = document.getElementById('ff-jam').checked; if(!echo && !jam) return ['echo','jam']; const out=[]; if(echo) out.push('echo'); if(jam) out.push('jam'); return out; }
-  function getActiveMedium(){ const el = document.querySelector('#media-tabs input[type="radio"]:checked'); return el ? el.value : 'kasety'; }
+  function getActiveStockFilter(){ 
+    const el = document.querySelector('#stock-tabs input[type="radio"]:checked'); 
+    return el ? el.value : 'all'; 
+  }
+  
+  function getActiveFFFilters(){ 
+    const echo = document.getElementById('ff-echo').checked; 
+    const jam  = document.getElementById('ff-jam').checked; 
+    if(!echo && !jam) return ['echo','jam']; 
+    const out=[]; 
+    if(echo) out.push('echo'); 
+    if(jam) out.push('jam'); 
+    return out; 
+  }
+  
+  function getActiveMedium(){ 
+    const el = document.querySelector('#media-tabs input[type="radio"]:checked'); 
+    return el ? el.value : 'kasety'; 
+  }
 
   async function fetchDataForMedium(medium){
     if(cacheByMedium[medium]) return cacheByMedium[medium];
     const sheetTitle = medium === 'kompakty' ? 'Kompakty' : 'Kasety';
-    // Zamiast kombinować z gid, pobieramy CSV po nazwie arkusza
     const url = csvExportUrlByTitle(sheetTitle);
     const resp = await fetch(url, {cache:'no-store'});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
@@ -242,10 +215,11 @@
     }
   }
 
-  function renderTiles(data, {stock, ffSel, q, qNr}){
+  function renderTiles(data, filters){
     const box = document.getElementById('tiles-container');
     box.innerHTML = '';
 
+    const {stock, ffSel, q, qNr} = filters;
     const filtered = data.filter(it=>{
       const il = it.ilosc|0;
       const stockOK = stock==='all' || (stock==='owned'  && il>0) || (stock==='wanted' && il<1) || (stock==='duble'  && il>1);
@@ -286,11 +260,9 @@
       img.src = miniatura;
       img.onerror = () => { 
         imgBox.innerHTML = ''; 
-        // Dla czarnego tła NIE pokazuj placeholdera
         if(bg !== '#000000') {
           showPlaceholder();
         } else {
-          // Dla czarnego tła ustaw subtelne tło szare
           wrap.style.background = '#111';
           wrap.style.color = '#888';
           imgBox.innerHTML = '<p style="font-size:0.8em;opacity:0.6;">brak okładki</p>';
@@ -299,14 +271,11 @@
       imgBox.appendChild(img);
       wrap.appendChild(imgBox);
     } else {
-      // Brak miniatury
       if(bg === '#000000') {
-        // Dla czarnego tła: brak placeholdera, subtelne info
         wrap.style.background = '#111';
         wrap.style.color = '#888';
         imgBox.innerHTML = '<p style="font-size:0.8em;opacity:0.6;">brak okładki</p>';
       } else {
-        // Dla innych kolorów: standardowy placeholder
         showPlaceholder();
       }
       wrap.appendChild(imgBox);
@@ -323,7 +292,9 @@
     tile.appendChild(pB);
 
     if(ilosc>0){
-      const pQ = document.createElement('p'); pQ.innerHTML = `Ilość: <strong>${ilosc}</strong>`; tile.appendChild(pQ);
+      const pQ = document.createElement('p'); 
+      pQ.innerHTML = `Ilość: <strong>${ilosc}</strong>`; 
+      tile.appendChild(pQ);
     }else{
       const q = encodeURIComponent(`${artysta} ${album}`);
       const allegroMedium = medium==='kompakty' ? 'Płyta%20CD' : 'Kaseta';
@@ -335,16 +306,33 @@
       tile.appendChild(pL);
     }
 
-    const pF = document.createElement('p'); pF.textContent = `${ff} - ${nr}`; tile.appendChild(pF);
+    const pF = document.createElement('p'); 
+    pF.textContent = `${ff} - ${nr}`; 
+    tile.appendChild(pF);
     return tile;
   }
 
-  function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':''' }[m])); }
-  function jsEscape(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-  function copyToClipboard(text){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+  function escapeHTML(s){ 
+    return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m])); 
+  }
+  
+  function jsEscape(s){ 
+    return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); 
+  }
+  
+  function copyToClipboard(text){ 
+    const ta=document.createElement('textarea'); 
+    ta.value=text; 
+    document.body.appendChild(ta); 
+    ta.select(); 
+    document.execCommand('copy'); 
+    document.body.removeChild(ta); 
+  }
 
   // Zdarzenia
-  ['search','search-nr','ff-echo','ff-jam'].forEach(id=>{ document.getElementById(id).addEventListener(id.startsWith('ff-')?'change':'input', applyFiltersAndRender); });
+  ['search','search-nr','ff-echo','ff-jam'].forEach(id=>{ 
+    document.getElementById(id).addEventListener(id.startsWith('ff-')?'change':'input', applyFiltersAndRender); 
+  });
   document.querySelectorAll('#stock-tabs input[type="radio"]').forEach(r=>r.addEventListener('change', applyFiltersAndRender));
   document.querySelectorAll('#media-tabs input[type="radio"]').forEach(r=>r.addEventListener('change', applyFiltersAndRender));
 
