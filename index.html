@@ -284,7 +284,7 @@
 
     // Teksty
     const pA = document.createElement('p');
-    pA.innerHTML = `<strong>${escapeHTML(artysta)}</strong><span class="copy-icon" onclick="copyToClipboard('${jsEscape(artysta)}')">(kopiuj)</span><span class="pill">${medium==='kompakty'?'CD':'Kaseta'}</span>`;
+    pA.innerHTML = `<strong>${escapeHTML(artysta)}</strong><span class="copy-icon" onclick="copyToClipboard('${jsEscape(artysta)}')">(kopiuj)</span>`;
     tile.appendChild(pA);
 
     const pB = document.createElement('p');
