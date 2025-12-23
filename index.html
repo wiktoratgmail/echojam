@@ -266,8 +266,7 @@
 
     const bg = (kolor||'#555555').toLowerCase();
     tile.style.backgroundColor = bg;
-    tile.style.color = bg==='#000000' ? 'gold' : 'white';
-    tile.style.color = bg==='#ffffff' ? 'black' : 'black';
+    tile.style.color = bg==='#000000' ? 'gold' : (bg==='#ffffff' ? 'black' : 'white');
     tile.style.border = ilosc===0 ? '5px solid red' : '5px solid #ddd';
 
     // Miniatura
@@ -285,13 +284,32 @@
       const img = document.createElement('img');
       img.loading='lazy';
       img.src = miniatura;
-      img.onerror = () => { imgBox.innerHTML=''; showPlaceholder(); };
+      img.onerror = () => { 
+        imgBox.innerHTML = ''; 
+        // Dla czarnego tła NIE pokazuj placeholdera
+        if(bg !== '#000000') {
+          showPlaceholder();
+        } else {
+          // Dla czarnego tła ustaw subtelne tło szare
+          wrap.style.background = '#111';
+          wrap.style.color = '#888';
+          imgBox.innerHTML = '<p style="font-size:0.8em;opacity:0.6;">brak okładki</p>';
+        }
+      };
       imgBox.appendChild(img);
       wrap.appendChild(imgBox);
     } else {
-      // Brak miniatury pokazuj znak zapytania, nie dla czarnego tła
-      if(bg==='#000000'){ wrap.style.background = '#000000'; wrap.style.color = '#888'; }
-     // showPlaceholder();
+      // Brak miniatury
+      if(bg === '#000000') {
+        // Dla czarnego tła: brak placeholdera, subtelne info
+        wrap.style.background = '#111';
+        wrap.style.color = '#888';
+        imgBox.innerHTML = '<p style="font-size:0.8em;opacity:0.6;">brak okładki</p>';
+      } else {
+        // Dla innych kolorów: standardowy placeholder
+        showPlaceholder();
+      }
+      wrap.appendChild(imgBox);
     }
     tile.appendChild(wrap);
 
@@ -321,7 +339,7 @@
     return tile;
   }
 
-  function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m])); }
+  function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':''' }[m])); }
   function jsEscape(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
   function copyToClipboard(text){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
 
